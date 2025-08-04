@@ -1,9 +1,23 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:csv/csv.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:headsup_ats/models/Candidate_model.dart';
+import 'package:headsup_ats/models/db_candiate_status_model.dart';
+import 'package:headsup_ats/models/db_candidate_model.dart';
+import 'package:headsup_ats/models/db_vault_model.dart';
+import 'package:headsup_ats/services/candidatte_db_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../utils/app_colors.dart';
 import 'dashboard_shell_screen.dart';
+import '../services/database_service.dart';
+import '../providers/user_provider.dart';
+import 'package:provider/provider.dart';
+import 'dart:io' as io;
 
 class DataVaultPage extends StatefulWidget {
   final VoidCallback? onBackToHome;
@@ -15,134 +29,50 @@ class DataVaultPage extends StatefulWidget {
 }
 
 class _DataVaultPageState extends State<DataVaultPage> {
-  List<CandidateModel> allCandidates = [];
-  List<CandidateModel> databaseCandidates = [];
-  List<CandidateModel> unlockedCandidates = [];
+  List<CandidateModelConverter> allCandidates = [];
+  List<CandidateModelConverter> databaseCandidates = [];
+  List<CandidateModelConverter> unlockedCandidates = [];
   String selectedStatusFilter = 'All';
   String selectedGenderFilter = 'All';
   String selectedExperienceFilter = 'All';
   String selectedLocationFilter = 'All';
   String selectedUploadDateFilter = 'All';
   bool isDatabaseTabSelected = true;
+  static UserProvider? userProvider;
 
   // Track which candidates' unlock panels are open (by name+phone for uniqueness)
   Set<String> openUnlockPanelKeys = {};
+  // Track which unlocked candidates' dropdowns are open
+  Set<String> openUnlockedDropdowns = {};
+  // Show loading indicator on tab switch
+  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
+    userProvider = Provider.of<UserProvider>(context, listen: false);
     _initializeCandidates();
   }
 
-  void _initializeCandidates() {
-    allCandidates = [
-      CandidateModel(
-        name: 'Tanvi Mandal',
-        location: 'Jayanagar, Bangalore, 5.6 Kms',
-        qualification: 'Graduate, B.Com',
-        languages: 'Kannada, English, Hindi',
-        experience: 'Fresher',
-        gender: 'Female, 25Y',
-        status: 'Interested',
-        statusColor: _getStatusColor('Interested'),
-        role: 'Marketing Executive',
-        uploadDate: '19 Jan 2025',
-        phone: '+91 9876543210',
-        email: 'tanvi.mandal@email.com',
-        isUnlocked: false,
-      ),
-      CandidateModel(
-        name: 'Rahul Sharma',
-        location: 'Koramangala, Bangalore, 3.2 Kms',
-        qualification: 'Graduate, BBA',
-        languages: 'English, Hindi, Kannada',
-        experience: 'Fresher',
-        gender: 'Male, 24Y',
-        status: 'RNR',
-        statusColor: _getStatusColor('RNR'),
-        role: 'Sales Executive',
-        uploadDate: '18 Jan 2025',
-        phone: '+91 9876543211',
-        email: 'rahul.sharma@email.com',
-        isUnlocked: false,
-      ),
-      CandidateModel(
-        name: 'Priya Singh',
-        location: 'Whitefield, Bangalore, 8.1 Kms',
-        qualification: 'Graduate, B.Com',
-        languages: 'Hindi, English, Tamil',
-        experience: 'Fresher',
-        gender: 'Female, 23Y',
-        status: 'Busy',
-        statusColor: _getStatusColor('Busy'),
-        role: 'Marketing Executive',
-        uploadDate: '17 Jan 2025',
-        phone: '+91 9876543212',
-        email: 'priya.singh@email.com',
-        isUnlocked: false,
-      ),
-      CandidateModel(
-        name: 'Amit Verma',
-        location: 'Indiranagar, Bangalore, 2.5 Kms',
-        qualification: 'Graduate, B.Sc',
-        languages: 'English, Hindi',
-        experience: '1-2 Years',
-        gender: 'Male, 26Y',
-        status: 'Pending',
-        statusColor: _getStatusColor('Pending'),
-        role: 'Field Sales',
-        uploadDate: '16 Jan 2025',
-        phone: '+91 9876543213',
-        email: 'amit.verma@email.com',
-        isUnlocked: false,
-      ),
-      CandidateModel(
-        name: 'Sneha Rao',
-        location: 'HSR Layout, Bangalore, 4.0 Kms',
-        qualification: 'Graduate, BCA',
-        languages: 'Kannada, English',
-        experience: '3-5 Years',
-        gender: 'Female, 28Y',
-        status: 'Interested',
-        statusColor: _getStatusColor('Interested'),
-        role: 'Team Lead',
-        uploadDate: '15 Jan 2025',
-        phone: '+91 9876543214',
-        email: 'sneha.rao@email.com',
-        isUnlocked: false,
-      ),
-      CandidateModel(
-        name: 'Vikram Desai',
-        location: 'BTM Layout, Bangalore, 6.3 Kms',
-        qualification: 'Graduate, B.Tech',
-        languages: 'English, Hindi',
-        experience: '5+ Years',
-        gender: 'Male, 30Y',
-        status: 'Contact again',
-        statusColor: _getStatusColor('Contact again'),
-        role: 'Manager',
-        uploadDate: '14 Jan 2025',
-        phone: '+91 9876543215',
-        email: 'vikram.desai@email.com',
-        isUnlocked: false,
-      ),
-      CandidateModel(
-        name: 'Meera Nair',
-        location: 'Marathahalli, Bangalore, 7.8 Kms',
-        qualification: 'Graduate, M.Com',
-        languages: 'English, Malayalam',
-        experience: '1-2 Years',
-        gender: 'Female, 27Y',
-        status: 'Busy',
-        statusColor: _getStatusColor('Busy'),
-        role: 'Accountant',
-        uploadDate: '13 Jan 2025',
-        phone: '+91 9876543216',
-        email: 'meera.nair@email.com',
-        isUnlocked: false,
-      ),
-    ];
-    
+  void _initializeCandidates() async {
+    final candidateService = CadidateDBService();
+    try {
+      // Replace with actual values
+      int userId = userProvider?.id ?? 0;
+      String accessToken = userProvider?.accessToken ?? '';
+
+      final candidates = await candidateService.getAllLockedCandidates(
+        userId,
+        accessToken,
+      );
+
+      setState(() {
+        allCandidates = candidates;
+      });
+    } catch (e) {
+      print("Error fetching candidates: $e");
+      // Optionally show a snackbar
+    }
     // Initially all candidates are in database
     databaseCandidates = List.from(allCandidates);
     unlockedCandidates = [];
@@ -150,61 +80,106 @@ class _DataVaultPageState extends State<DataVaultPage> {
     filteredUnlockedCandidates = List.from(unlockedCandidates);
   }
 
-  void _unlockCandidate(CandidateModel candidate) {
+  void _unlockCandidate(CandidateModelConverter candidate) {
     setState(() {
       // Remove from database candidates
-      databaseCandidates.removeWhere((c) => c.name == candidate.name && c.phone == candidate.phone);
+      databaseCandidates.removeWhere(
+        (c) => c.candidateId == candidate.candidateId,
+      );
       // Mark as unlocked and add to top of unlocked candidates
       candidate.isUnlocked = true;
       unlockedCandidates.insert(0, candidate);
       // Keep the slide-down open for this candidate
-      openUnlockPanelKeys.add(candidate.name + candidate.phone);
+      openUnlockPanelKeys.add(candidate.candidateId);
       _applyFilters();
     });
     // No navigation, just unlock in-place
   }
 
-  List<CandidateModel> filteredDatabaseCandidates = [];
-  List<CandidateModel> filteredUnlockedCandidates = [];
+  List<CandidateModelConverter> filteredDatabaseCandidates = [];
+  List<CandidateModelConverter> filteredUnlockedCandidates = [];
 
-  List<CandidateModel> get currentCandidates {
-    return isDatabaseTabSelected ? filteredDatabaseCandidates : filteredUnlockedCandidates;
+  List<CandidateModelConverter> get currentCandidates {
+    return isDatabaseTabSelected
+        ? filteredDatabaseCandidates
+        : filteredUnlockedCandidates;
   }
 
   void _applyFilters() {
     setState(() {
-      filteredDatabaseCandidates = databaseCandidates.where((c) =>
-        (selectedStatusFilter == 'All' || c.status.toString().toLowerCase() == selectedStatusFilter.toLowerCase()) &&
-        (selectedGenderFilter == 'All' || c.gender.toLowerCase().startsWith(selectedGenderFilter.toLowerCase())) &&
-        (selectedExperienceFilter == 'All' || c.experience.toLowerCase().contains(selectedExperienceFilter.toLowerCase())) &&
-        (selectedLocationFilter == 'All' || c.location.toLowerCase().contains(selectedLocationFilter.toLowerCase().trim())) &&
-        (selectedUploadDateFilter == 'All' || c.uploadDate.toLowerCase().contains(selectedUploadDateFilter.toLowerCase()))
-      ).toList();
-      filteredUnlockedCandidates = unlockedCandidates.where((c) =>
-        (selectedStatusFilter == 'All' || c.status.toString().toLowerCase() == selectedStatusFilter.toLowerCase()) &&
-        (selectedGenderFilter == 'All' || c.gender.toLowerCase().startsWith(selectedGenderFilter.toLowerCase())) &&
-        (selectedExperienceFilter == 'All' || c.experience.toLowerCase().contains(selectedExperienceFilter.toLowerCase())) &&
-        (selectedLocationFilter == 'All' || c.location.toLowerCase().contains(selectedLocationFilter.toLowerCase().trim())) &&
-        (selectedUploadDateFilter == 'All' || c.uploadDate.toLowerCase().contains(selectedUploadDateFilter.toLowerCase()))
-      ).toList();
+      filteredDatabaseCandidates = databaseCandidates
+          .where(
+            (c) =>
+                (selectedStatusFilter == 'All' ||
+                    (c.status ?? '').toLowerCase() ==
+                        selectedStatusFilter.toLowerCase()) &&
+                (selectedGenderFilter == 'All' ||
+                    (c.gender ?? '').toLowerCase().startsWith(
+                      selectedGenderFilter.toLowerCase(),
+                    )) &&
+                (selectedExperienceFilter == 'All' ||
+                    (c.experience ?? '').toLowerCase().contains(
+                      selectedExperienceFilter.toLowerCase(),
+                    )) &&
+                (selectedLocationFilter == 'All' ||
+                    (c.location ?? '').toLowerCase().contains(
+                      selectedLocationFilter.toLowerCase().trim(),
+                    )) &&
+                (selectedUploadDateFilter == 'All' ||
+                    (c.uploadDate ?? '').toLowerCase().contains(
+                      selectedUploadDateFilter.toLowerCase(),
+                    )),
+          )
+          .toList();
+      filteredUnlockedCandidates = unlockedCandidates
+          .where(
+            (c) =>
+                (selectedStatusFilter == 'All' ||
+                    (c.status ?? '').toLowerCase() ==
+                        selectedStatusFilter.toLowerCase()) &&
+                (selectedGenderFilter == 'All' ||
+                    (c.gender ?? '').toLowerCase().startsWith(
+                      selectedGenderFilter.toLowerCase(),
+                    )) &&
+                (selectedExperienceFilter == 'All' ||
+                    (c.experience ?? '').toLowerCase().contains(
+                      selectedExperienceFilter.toLowerCase(),
+                    )) &&
+                (selectedLocationFilter == 'All' ||
+                    (c.location ?? '').toLowerCase().contains(
+                      selectedLocationFilter.toLowerCase().trim(),
+                    )) &&
+                (selectedUploadDateFilter == 'All' ||
+                    (c.uploadDate ?? '').toLowerCase().contains(
+                      selectedUploadDateFilter.toLowerCase(),
+                    )),
+          )
+          .toList();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF181A20) : const Color(0xFFF5F5F5),
+      backgroundColor: isDark
+          ? const Color(0xFF181A20)
+          : const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: isDark ? const Color(0xFF23262B) : Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? Colors.white : Colors.black,
+          ),
           onPressed: () {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const DashboardShellScreen()),
+              MaterialPageRoute(
+                builder: (context) => const DashboardShellScreen(),
+              ),
               (route) => false,
             );
           },
@@ -256,35 +231,73 @@ class _DataVaultPageState extends State<DataVaultPage> {
                 ),
                 width: 38,
                 height: 38,
-                child: Icon(Icons.add, color: isDark ? Colors.grey[300] : Colors.grey[600], size: 22),
+                child: Icon(
+                  Icons.add,
+                  color: isDark ? Colors.grey[300] : Colors.grey[600],
+                  size: 22,
+                ),
               ),
               color: isDark ? const Color(0xFF23262B) : Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               itemBuilder: (BuildContext context) => [
                 PopupMenuItem<String>(
                   value: 'excel',
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 120, maxWidth: 180),
+                    constraints: const BoxConstraints(
+                      minWidth: 120,
+                      maxWidth: 180,
+                    ),
                     child: Row(
                       children: [
-                        Icon(Icons.upload_file, color: isDark ? Colors.white : Colors.black, size: 18),
+                        Icon(
+                          Icons.upload_file,
+                          color: isDark ? Colors.white : Colors.black,
+                          size: 18,
+                        ),
                         const SizedBox(width: 6),
-                        Text('Upload Excel', style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black)),
+                        Text(
+                          'Upload Excel',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
                 PopupMenuItem<String>(
                   value: 'google_sheets',
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 120, maxWidth: 180),
+                    constraints: const BoxConstraints(
+                      minWidth: 120,
+                      maxWidth: 180,
+                    ),
                     child: Row(
                       children: [
-                        Icon(Icons.table_chart, color: isDark ? Colors.white : Colors.black, size: 18),
+                        Icon(
+                          Icons.table_chart,
+                          color: isDark ? Colors.white : Colors.black,
+                          size: 18,
+                        ),
                         const SizedBox(width: 6),
-                        Text('Google Sheets', style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black)),
+                        Text(
+                          'Google Sheets',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -314,16 +327,28 @@ class _DataVaultPageState extends State<DataVaultPage> {
                 ),
                 width: 38,
                 height: 38,
-                child: Icon(Icons.menu, color: isDark ? Colors.grey[300] : Colors.grey[600], size: 22),
+                child: Icon(
+                  Icons.menu,
+                  color: isDark ? Colors.grey[300] : Colors.grey[600],
+                  size: 22,
+                ),
               ),
               color: isDark ? const Color(0xFF23262B) : Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               itemBuilder: (BuildContext context) => [
                 PopupMenuItem<String>(
                   value: 'filter',
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 120, maxWidth: 180),
+                    constraints: const BoxConstraints(
+                      minWidth: 120,
+                      maxWidth: 180,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -363,21 +388,107 @@ class _DataVaultPageState extends State<DataVaultPage> {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: () {
+                  onTap: () async {
                     setState(() {
-                      isDatabaseTabSelected = true;
+                      _isRefreshing = true;
                     });
+
+                    try {
+                      // Fetch fresh data from backend
+                      final fetchedCandidates = await CadidateDBService()
+                          .getAllLockedCandidates(
+                            userProvider!.id ?? 0,
+                            userProvider!.accessToken.toString() ?? '',
+                          );
+
+                      // Update state
+                      setState(() {
+                        allCandidates = fetchedCandidates;
+
+                        // Filter out only locked candidates (isUnlocked == false or null)
+                        databaseCandidates = allCandidates
+                            .where((c) => c.isUnlocked != true)
+                            .toList();
+
+                        isDatabaseTabSelected = true;
+                        openUnlockedDropdowns.clear();
+                        openUnlockPanelKeys
+                            .clear(); // Collapse all database dropdowns
+                        unlockedCandidates = allCandidates
+                            .where((c) => c.isUnlocked == true)
+                            .toList();
+                        _applyFilters(); // Apply sorting/filtering logic
+                        _isRefreshing = false;
+                      });
+                    } catch (e) {
+                      setState(() {
+                        _isRefreshing = false;
+                      });
+
+                      // Optional: show error message
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Failed to fetch candidates: $e"),
+                        ),
+                      );
+                    }
                   },
-                  child: _buildTab('Database', '(${databaseCandidates.length})', isDatabaseTabSelected, isDark),
+                  child: _buildTab(
+                    'Database',
+                    '(${databaseCandidates.length})',
+                    isDatabaseTabSelected,
+                    isDark,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 GestureDetector(
-                  onTap: () {
+                  onTap: () async {
                     setState(() {
-                      isDatabaseTabSelected = false;
+                      _isRefreshing = true;
                     });
+
+                    try {
+                      // Call your API to fetch all candidates
+                      final fetchedCandidates = await CadidateDBService()
+                          .getAllUnlockedCandidates(
+                            userProvider!.id ?? 0,
+                            userProvider!.accessToken.toString() ?? '',
+                          );
+
+                      // Update the main list
+                      setState(() {
+                        allCandidates = fetchedCandidates;
+
+                        // Extract unlocked candidates from updated list
+                        unlockedCandidates = allCandidates
+                            .where((c) => c.isUnlocked == true)
+                            .toList();
+
+                        // UI and state management
+                        isDatabaseTabSelected = false;
+                        openUnlockedDropdowns.clear();
+                        _applyFilters();
+                        _isRefreshing = false;
+                      });
+                    } catch (e) {
+                      setState(() {
+                        _isRefreshing = false;
+                      });
+
+                      // Optional: show error to user
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Failed to fetch candidates: $e"),
+                        ),
+                      );
+                    }
                   },
-                  child: _buildTab('Unlocked', '(${unlockedCandidates.length})', !isDatabaseTabSelected, isDark),
+                  child: _buildTab(
+                    'Unlocked',
+                    '(${unlockedCandidates.length})',
+                    !isDatabaseTabSelected,
+                    isDark,
+                  ),
                 ),
               ],
             ),
@@ -385,10 +496,12 @@ class _DataVaultPageState extends State<DataVaultPage> {
           const SizedBox(height: 8),
           // Candidate List
           Expanded(
-            child: currentCandidates.isEmpty 
+            child: _isRefreshing
+                ? Center(child: CircularProgressIndicator())
+                : currentCandidates.isEmpty
                 ? Center(
                     child: Text(
-                      isDatabaseTabSelected 
+                      isDatabaseTabSelected
                           ? 'No candidates in database'
                           : 'No unlocked candidates yet',
                       style: TextStyle(
@@ -401,7 +514,10 @@ class _DataVaultPageState extends State<DataVaultPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: currentCandidates.length,
                     itemBuilder: (context, index) {
-                      return _buildCandidateCard(currentCandidates[index], isDark);
+                      return _buildCandidateCard(
+                        currentCandidates[index],
+                        isDark,
+                      );
                     },
                   ),
           ),
@@ -428,10 +544,10 @@ class _DataVaultPageState extends State<DataVaultPage> {
 
   void _showFilterDialog(String filterType) {
     Navigator.pop(context);
-    
+
     List<String> options = [];
     String currentValue = '';
-    
+
     switch (filterType) {
       case 'By Status':
         options = ['All', 'Interested', 'RNR', 'Busy', 'Pending'];
@@ -513,47 +629,124 @@ class _DataVaultPageState extends State<DataVaultPage> {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['xlsx', 'xls'],
+        allowedExtensions: ['csv'],
+        withData: kIsWeb, // Required for web
       );
 
-      if (result != null) {
-        // Simulate adding a new candidate (real implementation would parse the file)
-        CandidateModel newCandidate = CandidateModel(
-          name: 'New Candidate',
-          location: 'Unknown',
-          qualification: 'Unknown',
-          languages: 'Unknown',
-          experience: 'Fresher',
-          gender: 'Unknown',
-          status: 'Interested',
-          statusColor: _getStatusColor('Interested'),
-          role: 'Unknown',
-          uploadDate: 'Today',
-          phone: '+91 0000000000',
-          email: 'new@email.com',
-          isUnlocked: !isDatabaseTabSelected,
-        );
-        setState(() {
-          if (isDatabaseTabSelected) {
-            databaseCandidates.add(newCandidate);
-          } else {
-            unlockedCandidates.add(newCandidate);
-          }
-          _applyFilters();
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Excel file "${result.files.single.name}" uploaded and candidate added!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      if (result == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("❗No file selected.")));
+        return;
       }
-    } catch (e) {
+
+      String csvString;
+
+      if (kIsWeb) {
+        Uint8List fileBytes = result.files.single.bytes!;
+        csvString = utf8.decode(fileBytes);
+      } else {
+        String? path = result.files.single.path;
+        if (path == null) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("❌ Could not get file path.")));
+          return;
+        }
+        final file = io.File(path);
+        csvString = await file.readAsString();
+      }
+
+      List<List<dynamic>> rows = const CsvToListConverter().convert(csvString);
+
+      if (rows.length < 2) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("❌ CSV is empty or missing header.")),
+        );
+        return;
+      }
+
+      // Trim headers
+      List<String> headers = rows.first
+          .map((e) => e.toString().trim())
+          .toList();
+      List<CandidateDB> candidates = [];
+
+      for (int i = 1; i < rows.length; i++) {
+        final row = rows[i];
+        final Map<String, dynamic> rowData = {};
+
+        for (int j = 0; j < headers.length; j++) {
+          rowData[headers[j]] = j < row.length ? row[j] : null;
+        }
+
+        try {
+          final candidate = CandidateDB.fromJson({
+            'name': rowData['name']?.toString() ?? '',
+            'location': rowData['location']?.toString() ?? '',
+            'qualification': rowData['qualification']?.toString() ?? '',
+            'languages': rowData['languages']?.toString() ?? '',
+            'experience': rowData['experience']?.toString() ?? '',
+            'gender': rowData['gender']?.toString() ?? '',
+            'age': int.tryParse(rowData['age'].toString()) ?? 0,
+            'callStatus': rowData['callStatus']?.toString() ?? '',
+            'role': rowData['role']?.toString() ?? '',
+            'uploadDate': rowData['uploadDate']?.toString() ?? '',
+            'phone': rowData['phone'].toString(),
+            'email': rowData['email']?.toString() ?? '',
+            'isUnlocked':
+                rowData['isUnlocked']?.toString().toLowerCase().trim() ==
+                'true',
+            'notes': rowData['notes']?.toString() ?? '',
+            'other1': rowData['other1']?.toString() ?? '',
+            'other2': rowData['other2']?.toString() ?? '',
+            'userId': int.tryParse(rowData['userId'].toString()) ?? 0,
+          });
+
+          candidates.add(candidate);
+        } catch (e) {
+          debugPrint("Skipping row $i due to error: $e");
+        }
+      }
+
+      if (candidates.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("❗No valid candidate data found.")),
+        );
+        return;
+      }
+
+      await _sendToBackend(
+        context,
+        candidates,
+        userProvider!.accessToken.toString() ?? '',
+      );
+    } catch (e, st) {
+      debugPrint("❌ Error while uploading CSV: $e\n$st");
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("❌ Error reading file: $e")));
+    }
+  }
+
+  Future<void> _sendToBackend(
+    BuildContext context,
+    List<CandidateDB> candidates,
+    String token,
+  ) async {
+    final result = await CadidateDBService.importCandidates(candidates, token);
+
+    if (result['success']) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Error uploading Excel file'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: Text(
+            "✅ Uploaded: ${result['inserted']} | Skipped: ${result['skipped']}",
+          ),
         ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? "❌ Unknown error.")),
       );
     }
   }
@@ -571,7 +764,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected 
+        color: isSelected
             ? (isDark ? primaryBlue.withOpacity(0.2) : Colors.blue[100])
             : (isDark ? Colors.grey[800] : Colors.grey[200]),
         borderRadius: BorderRadius.circular(20),
@@ -582,7 +775,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
           Text(
             title,
             style: TextStyle(
-              color: isSelected 
+              color: isSelected
                   ? (isDark ? primaryBlue : Colors.blue[700])
                   : (isDark ? Colors.grey[300] : Colors.grey[600]),
               fontSize: 14,
@@ -593,7 +786,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
           Text(
             count,
             style: TextStyle(
-              color: isSelected 
+              color: isSelected
                   ? (isDark ? primaryBlue : Colors.blue[700])
                   : (isDark ? Colors.grey[300] : Colors.grey[600]),
               fontSize: 14,
@@ -604,7 +797,11 @@ class _DataVaultPageState extends State<DataVaultPage> {
     );
   }
 
-  Widget _buildCandidateCard(CandidateModel candidate, bool isDark) {
+  Widget _buildCandidateCard(CandidateModelConverter candidate, bool isDark) {
+    final isUnlockedTab = !isDatabaseTabSelected;
+    final isDropdownOpen = isUnlockedTab
+        ? openUnlockedDropdowns.contains(candidate.candidateId)
+        : openUnlockPanelKeys.contains(candidate.candidateId);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -613,7 +810,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: isDark 
+            color: isDark
                 ? Colors.black.withOpacity(0.3)
                 : Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
@@ -625,7 +822,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with name and role
+          // Header with name, candidateId, and role
           Row(
             children: [
               Expanded(
@@ -633,16 +830,25 @@ class _DataVaultPageState extends State<DataVaultPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      candidate.name,
+                      candidate.name ?? '',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                         color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
-                      candidate.location,
+                      'ID: ${candidate.candidateId}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.grey[400] : Colors.grey[700],
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      candidate.location ?? '',
                       style: TextStyle(
                         fontSize: 14,
                         color: isDark ? Colors.grey[300] : Colors.grey[600],
@@ -652,13 +858,16 @@ class _DataVaultPageState extends State<DataVaultPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green[100],
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  candidate.role,
+                  candidate.role ?? '',
                   style: TextStyle(
                     color: Colors.green[700],
                     fontSize: 12,
@@ -668,25 +877,62 @@ class _DataVaultPageState extends State<DataVaultPage> {
               ),
               const SizedBox(width: 8),
               GestureDetector(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Edit'),
-                      content: const Text('Edit feature coming soon!'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                // onTap: () {
+                //   final editable = EditableCandidate(
+                //     name: candidate.name ?? '',
+                //     location: candidate.location ?? '',
+                //     qualification: candidate.qualification ?? '',
+                //     languages: candidate.languages ?? '',
+                //     experience: candidate.experience ?? '',
+                //     gender: candidate.gender ?? '',
+                //     age: candidate.age ?? '',
+                //     status: candidate.status ?? '',
+                //     role: candidate.role ?? '',
+                //     uploadDate: candidate.uploadDate ?? '',
+                //     phone: candidate.phone ?? '',
+                //     email: candidate.email ?? '',
+                //     isUnlocked: candidate.isUnlocked ?? false,
+                //   );
+                //   showDialog(
+                //     context: context,
+                //     builder: (context) => EditCandidateDialog(
+                //       candidate: editable,
+                //       onSave: (edited) {
+                //         setState(() {
+                //           // Replace the candidate in the list with a new CandidateModelConverter
+                //           int idx = currentCandidates.indexOf(candidate);
+                //           CandidateModelConverter updated = CandidateModelConverter(
+                //             candidateId: candidate.candidateId,
+                //             name: edited.name,
+                //             location: edited.location,
+                //             qualification: edited.qualification,
+                //             languages: edited.languages,
+                //             experience: edited.experience,
+                //             gender: edited.gender,
+                //             age: edited.age,
+                //             status: edited.status,
+                //             role: edited.role,
+                //             uploadDate: edited.uploadDate,
+                //             phone: edited.phone,
+                //             email: edited.email,
+                //             isUnlocked: edited.isUnlocked,
+                //           );
+                //           if (isDatabaseTabSelected) {
+                //             databaseCandidates[databaseCandidates.indexOf(candidate)] = updated;
+                //             filteredDatabaseCandidates[idx] = updated;
+                //           } else {
+                //             unlockedCandidates[unlockedCandidates.indexOf(candidate)] = updated;
+                //             filteredUnlockedCandidates[idx] = updated;
+                //           }
+                //         });
+                //       },
+                //     ),
+                //   );
+                // },
                 child: Icon(
-                  Icons.edit, 
-                  color: isDark ? Colors.grey[500] : Colors.grey[400], 
-                  size: 20
+                  Icons.edit,
+                  color: isDark ? Colors.grey[500] : Colors.grey[400],
+                  size: 20,
                 ),
               ),
             ],
@@ -696,10 +942,18 @@ class _DataVaultPageState extends State<DataVaultPage> {
           Row(
             children: [
               Expanded(
-                child: _buildDetailRow(Icons.school, candidate.qualification, isDark),
+                child: _buildDetailRow(
+                  Icons.school,
+                  candidate.qualification ?? '',
+                  isDark,
+                ),
               ),
               Expanded(
-                child: _buildDetailRow(Icons.language, candidate.languages, isDark),
+                child: _buildDetailRow(
+                  Icons.language,
+                  candidate.languages ?? '',
+                  isDark,
+                ),
               ),
             ],
           ),
@@ -707,17 +961,28 @@ class _DataVaultPageState extends State<DataVaultPage> {
           Row(
             children: [
               Expanded(
-                child: _buildDetailRow(Icons.work, candidate.experience, isDark),
+                child: _buildDetailRow(
+                  Icons.work,
+                  candidate.experience ?? '',
+                  isDark,
+                ),
               ),
               Expanded(
-                child: _buildDetailRow(Icons.person, candidate.gender, isDark),
+                child: _buildDetailRow(
+                  Icons.person,
+                  (candidate.gender ?? '') +
+                      ((candidate.age ?? '').isNotEmpty
+                          ? ', ${candidate.age}'
+                          : ''),
+                  isDark,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Communication buttons section (for unlocked candidates)
-          if (candidate.isUnlocked) ...[
+          if ((candidate.isUnlocked ?? false)) ...[
             // First row of communication buttons
             Row(
               children: [
@@ -726,7 +991,23 @@ class _DataVaultPageState extends State<DataVaultPage> {
                     icon: FontAwesomeIcons.whatsapp,
                     label: 'WhatsApp',
                     color: const Color(0xFF25D366),
-                    onTap: () => _showWhatsAppDialog(candidate),
+                    onTap: () async {
+                      final status = DBStatusDTO(
+                        statusName: 'WhatsApp',
+                        other1: 'Sent WhatsApp message',
+                        candidateId: int.parse(candidate.candidateId),
+                        userId: _DataVaultPageState.userProvider?.id ?? 0,
+                      );
+
+                      await CadidateDBService().addStatus(
+                        status,
+                        _DataVaultPageState.userProvider?.accessToken ?? '',
+                      );
+
+                      _showWhatsAppDialog(
+                        candidate,
+                      ); // Assuming it handles UI and message
+                    },
                     isDark: isDark,
                   ),
                 ),
@@ -736,7 +1017,25 @@ class _DataVaultPageState extends State<DataVaultPage> {
                     icon: Icons.phone_outlined,
                     label: 'Phone',
                     color: const Color(0xFF2196F3),
-                    onTap: () => _launchPhone(candidate.phone),
+                    onTap: () async {
+                      final phone = candidate.phone ?? '';
+
+                      // Call your API silently
+                      final status = DBStatusDTO(
+                        statusName: 'Phone',
+                        other1: 'Called from Phone button',
+                        candidateId: int.parse(candidate.candidateId),
+                        userId: _DataVaultPageState.userProvider?.id ?? 0,
+                      );
+
+                      await CadidateDBService().addStatus(
+                        status,
+                        _DataVaultPageState.userProvider?.accessToken
+                                .toString() ??
+                            '',
+                      ); // No context needed
+                      _launchPhone(candidate.phone ?? '');
+                    },
                     isDark: isDark,
                   ),
                 ),
@@ -757,51 +1056,93 @@ class _DataVaultPageState extends State<DataVaultPage> {
             Row(
               children: [
                 Expanded(
-                child: _buildExactScreenshotButton(
-                icon: Icons.sms_outlined,
-                label: 'SMS',
-                color: const Color(0xFFFF9800),
-                onTap: () => _launchSMSWithMessage(
-                candidate.phone,
-                'Hi,\nI have a job vacancy in your city.\n\nJob: Sales executive\nSalary: up to Rs.35,000\nCall Me: 9818074659',
-                ),
-                isDark: isDark,
-                ),
+                  child: _buildExactScreenshotButton(
+                    icon: Icons.sms_outlined,
+                    label: 'SMS',
+                    color: const Color(0xFFFF9800),
+                    onTap: () async {
+                      final phone = candidate.phone ?? '';
+
+                      final status = DBStatusDTO(
+                        statusName: 'SMS',
+                        other1: 'Sent SMS to candidate',
+                        candidateId: int.parse(candidate.candidateId),
+                        userId: _DataVaultPageState.userProvider?.id ?? 0,
+                      );
+
+                      await CadidateDBService().addStatus(
+                        status,
+                        _DataVaultPageState.userProvider?.accessToken ?? '',
+                      );
+
+                      _launchSMSWithMessage(
+                        phone,
+                        'Hi,\nI have a job vacancy in your city.\n\nJob: Sales executive\nSalary: up to Rs.35,000\nCall Me: 9818074659',
+                      );
+                    },
+
+                    isDark: isDark,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                child: _buildExactScreenshotButton(
-                icon: Icons.email_outlined,
-                label: 'Email',
-                color: const Color(0xFFF44336),
-                onTap: () => _launchEmailWithMessage(
-                candidate.email,
-                'Dear Candidate,\n\nI hope this email finds you well.\n\nI have a job vacancy in your city.\n\nJob Details:\nPosition: Sales executive\nSalary: up to Rs.35,000\nContact: 9818074659\n\nBest regards',
-                ),
-                isDark: isDark,
-                ),
+                  child: _buildExactScreenshotButton(
+                    icon: Icons.email_outlined,
+                    label: 'Email',
+                    color: const Color(0xFFF44336),
+                    onTap: () async {
+                      final email = candidate.email ?? '';
+
+                      final status = DBStatusDTO(
+                        statusName: 'Email',
+                        other1: 'Sent email to candidate',
+                        candidateId: int.parse(candidate.candidateId),
+                        userId: _DataVaultPageState.userProvider?.id ?? 0,
+                      );
+
+                      await CadidateDBService().addStatus(
+                        status,
+                        _DataVaultPageState.userProvider?.accessToken ?? '',
+                      );
+
+                      _launchEmailWithMessage(
+                        email,
+                        'Dear Candidate,\n\nI hope this email finds you well.\n\nI have a job vacancy in your city.\n\nJob Details:\nPosition: Sales executive\nSalary: up to Rs.35,000\nContact: 9818074659\n\nBest regards',
+                      );
+                    },
+
+                    isDark: isDark,
+                  ),
                 ),
                 const SizedBox(width: 10),
-                Expanded(
-                  child: _buildRemarksDropdown(candidate, isDark),
-                ),
+                Expanded(child: _buildRemarksDropdown(candidate, isDark)),
               ],
             ),
+            // Removed custom dropdown arrow and dropdown content for unlocked candidates
             const SizedBox(height: 16),
             // Status section
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: candidate.statusColor.withOpacity(0.1),
+                    color: _getStatusColor(
+                      candidate.status ?? '',
+                    ).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: candidate.statusColor.withOpacity(0.3)),
+                    border: Border.all(
+                      color: _getStatusColor(
+                        candidate.status ?? '',
+                      ).withOpacity(0.3),
+                    ),
                   ),
                   child: Text(
-                    candidate.status,
+                    candidate.status ?? '',
                     style: TextStyle(
-                      color: candidate.statusColor,
+                      color: _getStatusColor(candidate.status ?? ''),
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -816,16 +1157,25 @@ class _DataVaultPageState extends State<DataVaultPage> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: candidate.statusColor.withOpacity(0.1),
+                        color: _getStatusColor(
+                          candidate.status ?? '',
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: candidate.statusColor.withOpacity(0.3)),
+                        border: Border.all(
+                          color: _getStatusColor(
+                            candidate.status ?? '',
+                          ).withOpacity(0.3),
+                        ),
                       ),
                       child: Text(
-                        candidate.status,
+                        candidate.status ?? '',
                         style: TextStyle(
-                          color: candidate.statusColor,
+                          color: _getStatusColor(candidate.status ?? ''),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -833,10 +1183,11 @@ class _DataVaultPageState extends State<DataVaultPage> {
                     ),
                     const Spacer(),
                     // Show the unlock button only if not unlocked and panel not open
-                    if (!candidate.isUnlocked && !openUnlockPanelKeys.contains(candidate.name + candidate.phone))
+                    if (!(candidate.isUnlocked ?? false) &&
+                        !openUnlockPanelKeys.contains(candidate.candidateId))
                       ElevatedButton(
                         onPressed: () {
-                          final key = candidate.name + candidate.phone;
+                          final key = candidate.candidateId;
                           setState(() {
                             openUnlockPanelKeys.add(key);
                           });
@@ -847,7 +1198,10 @@ class _DataVaultPageState extends State<DataVaultPage> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
                         ),
                         child: const Text(
                           'Unlock the candidate',
@@ -860,9 +1214,14 @@ class _DataVaultPageState extends State<DataVaultPage> {
                 AnimatedSize(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut,
-                  child: (openUnlockPanelKeys.contains(candidate.name + candidate.phone) || candidate.isUnlocked)
+                  child:
+                      (openUnlockPanelKeys.contains(candidate.candidateId) ||
+                          (candidate.isUnlocked ?? false))
                       ? Padding(
-                          padding: const EdgeInsets.only(top: 12.0, bottom: 4.0),
+                          padding: const EdgeInsets.only(
+                            top: 12.0,
+                            bottom: 4.0,
+                          ),
                           child: Column(
                             children: [
                               Row(
@@ -873,7 +1232,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
                                       label: 'WhatsApp',
                                       color: const Color(0xFF25D366),
                                       onTap: () => _launchWhatsAppWithMessage(
-                                        candidate.phone,
+                                        candidate.phone ?? '',
                                         'Hi,\nI have a job vacancy in your city.\n\nJob Details:\nJob: Sales executive\nSalary: up to Rs.35,000\nCall Me: 9818074659',
                                       ),
                                       isDark: isDark,
@@ -885,9 +1244,64 @@ class _DataVaultPageState extends State<DataVaultPage> {
                                       icon: Icons.phone_outlined,
                                       label: 'Phone',
                                       color: const Color(0xFF2196F3),
-                                      onTap: () {
-                                        _unlockCandidate(candidate);
-                                        _launchPhone(candidate.phone);
+                                      onTap: () async {
+                                        final token =
+                                            _DataVaultPageState
+                                                .userProvider
+                                                ?.accessToken ??
+                                            '';
+                                        final candidateId =
+                                            candidate.candidateId;
+
+                                        final success =
+                                            await CadidateDBService()
+                                                .unlockCandidateById(
+                                                  candidateId,
+                                                  token,
+                                                );
+
+                                        if (success) {
+                                          setState(() {
+                                            int allIdx = allCandidates
+                                                .indexWhere(
+                                                  (c) =>
+                                                      c.candidateId ==
+                                                      candidateId,
+                                                );
+                                            if (allIdx != -1) {
+                                              allCandidates[allIdx].isUnlocked =
+                                                  true;
+                                            }
+
+                                            databaseCandidates.removeWhere(
+                                              (c) =>
+                                                  c.candidateId == candidateId,
+                                            );
+
+                                            unlockedCandidates = allCandidates
+                                                .where(
+                                                  (c) => c.isUnlocked == true,
+                                                )
+                                                .toList();
+
+                                            isDatabaseTabSelected = false;
+                                            openUnlockedDropdowns.clear();
+                                            _applyFilters();
+                                          });
+
+                                          _launchPhone(candidate.phone ?? '');
+                                        } else {
+                                          // Optional: show error Snackbar
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Failed to unlock candidate',
+                                              ),
+                                            ),
+                                          );
+                                        }
                                       },
                                       isDark: isDark,
                                     ),
@@ -913,7 +1327,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
                                       label: 'SMS',
                                       color: const Color(0xFFFF9800),
                                       onTap: () => _launchSMSWithMessage(
-                                        candidate.phone,
+                                        candidate.phone ?? '',
                                         'Hi,\nI have a job vacancy in your city.\n\nJob: Sales executive\nSalary: up to Rs.35,000\nCall Me: 9818074659',
                                       ),
                                       isDark: isDark,
@@ -926,7 +1340,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
                                       label: 'Email',
                                       color: const Color(0xFFF44336),
                                       onTap: () => _launchEmailWithMessage(
-                                        candidate.email,
+                                        candidate.email ?? '',
                                         'Dear Candidate,\n\nI hope this email finds you well.\n\nI have a job vacancy in your city.\n\nJob Details:\nPosition: Sales executive\nSalary: up to Rs.35,000\nContact: 9818074659\n\nBest regards',
                                       ),
                                       isDark: isDark,
@@ -934,7 +1348,10 @@ class _DataVaultPageState extends State<DataVaultPage> {
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
-                                    child: _buildRemarksDropdown(candidate, isDark),
+                                    child: _buildRemarksDropdown(
+                                      candidate,
+                                      isDark,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -948,7 +1365,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
           ],
           const SizedBox(height: 8),
           Text(
-            'Uploaded date\n${candidate.uploadDate}',
+            'Uploaded date\n${candidate.uploadDate ?? ''}',
             style: TextStyle(
               fontSize: 12,
               color: isDark ? Colors.grey[400] : Colors.grey[500],
@@ -960,7 +1377,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
   }
 
   // WhatsApp Dialog
-  void _showWhatsAppDialog(CandidateModel candidate) {
+  void _showWhatsAppDialog(CandidateModelConverter candidate) {
     final TextEditingController messageController = TextEditingController();
     messageController.text = '''Hi,
 I have a job vacancy in your city.
@@ -1040,7 +1457,10 @@ Call Me: 9818074659''';
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        _launchWhatsAppWithMessage(candidate.phone, messageController.text);
+                        _launchWhatsAppWithMessage(
+                          candidate.phone ?? '',
+                          messageController.text,
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2196F3),
@@ -1062,7 +1482,7 @@ Call Me: 9818074659''';
   }
 
   // SMS Dialog
-  void _showSMSDialog(CandidateModel candidate) {
+  void _showSMSDialog(CandidateModelConverter candidate) {
     final TextEditingController messageController = TextEditingController();
     messageController.text = '''Hi,
 I have a job vacancy in your city.
@@ -1141,7 +1561,10 @@ Call Me: 9818074659''';
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        _launchSMSWithMessage(candidate.phone, messageController.text);
+                        _launchSMSWithMessage(
+                          candidate.phone ?? '',
+                          messageController.text,
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2196F3),
@@ -1163,7 +1586,7 @@ Call Me: 9818074659''';
   }
 
   // Email Dialog
-  void _showEmailDialog(CandidateModel candidate) {
+  void _showEmailDialog(CandidateModelConverter candidate) {
     final TextEditingController messageController = TextEditingController();
     messageController.text = '''Dear Candidate,
 
@@ -1248,7 +1671,10 @@ Best regards''';
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        _launchEmailWithMessage(candidate.email, messageController.text);
+                        _launchEmailWithMessage(
+                          candidate.email ?? '',
+                          messageController.text,
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2196F3),
@@ -1289,11 +1715,7 @@ Best regards''';
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: color,
-              size: 16,
-            ),
+            Icon(icon, color: color, size: 16),
             const SizedBox(width: 4),
             Text(
               label,
@@ -1310,7 +1732,7 @@ Best regards''';
   }
 
   // CORRECTED: Dropdown with proper positioning and reduced gaps
-  Widget _buildRemarksDropdown(CandidateModel candidate, bool isDark) {
+  Widget _buildRemarksDropdown(CandidateModelConverter candidate, bool isDark) {
     final List<String> statusOptions = [
       'Interested',
       'RNR',
@@ -1324,20 +1746,30 @@ Best regards''';
     ];
 
     return PopupMenuButton<String>(
-      offset: const Offset(0, 40), // Position dropdown below the button
-      onSelected: (String? newValue) {
+      offset: const Offset(0, 40),
+      onSelected: (String? newValue) async {
         if (newValue != null) {
           setState(() {
             candidate.status = newValue;
-            candidate.statusColor = _getStatusColor(newValue);
           });
+
+          final status = DBStatusDTO(
+            statusName: newValue,
+            other1: 'Updated via Remarks dropdown',
+            candidateId: int.parse(candidate.candidateId),
+            userId: _DataVaultPageState.userProvider?.id ?? 0,
+          );
+
+          await CadidateDBService().addStatus(
+            status,
+            _DataVaultPageState.userProvider?.accessToken ?? '',
+          );
         }
       },
       itemBuilder: (BuildContext context) => [
-        // Header item (non-selectable)
         PopupMenuItem<String>(
           enabled: false,
-          height: 32, // Reduced height
+          height: 32,
           child: Text(
             'Call Status',
             style: TextStyle(
@@ -1347,14 +1779,12 @@ Best regards''';
             ),
           ),
         ),
-        // Divider with reduced space
         const PopupMenuDivider(height: 8),
-        // Status options with reduced height
         ...statusOptions.map((String status) {
           Color statusColor = _getStatusColor(status);
           return PopupMenuItem<String>(
             value: status,
-            height: 32, // Reduced height
+            height: 32,
             child: Text(
               status,
               style: TextStyle(
@@ -1372,8 +1802,8 @@ Best regards''';
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? Colors.grey[600]! : Colors.grey[400]!, 
-            width: 1
+            color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+            width: 1,
           ),
         ),
         child: Row(
@@ -1408,7 +1838,9 @@ Best regards''';
       case 'RNR':
         return const Color(0xFFD82D1A); // #D82D1A
       case 'Busy':
-        return const Color(0xFFE67E22); // Using darker orange for better visibility
+        return const Color(
+          0xFFE67E22,
+        ); // Using darker orange for better visibility
       case 'Contact again':
         return const Color(0xFF407BFF); // #407BFF
       case 'Pending':
@@ -1427,7 +1859,9 @@ Best regards''';
   }
 
   Future<void> _launchWhatsAppWithMessage(String phone, String message) async {
-    final Uri whatsappUri = Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+    final Uri whatsappUri = Uri.parse(
+      "https://wa.me/$phone?text=${Uri.encodeComponent(message)}",
+    );
     if (await canLaunchUrl(whatsappUri)) {
       await launchUrl(whatsappUri);
     }
@@ -1441,14 +1875,18 @@ Best regards''';
   }
 
   Future<void> _launchSMSWithMessage(String phone, String message) async {
-    final Uri smsUri = Uri.parse("sms:$phone?body=${Uri.encodeComponent(message)}");
+    final Uri smsUri = Uri.parse(
+      "sms:$phone?body=${Uri.encodeComponent(message)}",
+    );
     if (await canLaunchUrl(smsUri)) {
       await launchUrl(smsUri);
     }
   }
 
   Future<void> _launchEmailWithMessage(String email, String message) async {
-    final Uri emailUri = Uri.parse("mailto:$email?subject=Job Opportunity&body=${Uri.encodeComponent(message)}");
+    final Uri emailUri = Uri.parse(
+      "mailto:$email?subject=Job Opportunity&body=${Uri.encodeComponent(message)}",
+    );
     if (await canLaunchUrl(emailUri)) {
       await launchUrl(emailUri);
     }
@@ -1474,9 +1912,9 @@ Best regards''';
     return Row(
       children: [
         Icon(
-          icon, 
-          size: 16, 
-          color: isDark ? Colors.grey[400] : Colors.grey[600]
+          icon,
+          size: 16,
+          color: isDark ? Colors.grey[400] : Colors.grey[600],
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -1494,49 +1932,16 @@ Best regards''';
   }
 }
 
-// Candidate Model
-class CandidateModel {
-  final String name;
-  final String location;
-  final String qualification;
-  final String languages;
-  final String experience;
-  final String gender;
-  String status;
-  Color statusColor;
-  final String role;
-  final String uploadDate;
-  final String phone;
-  final String email;
-  bool isUnlocked;
-
-  CandidateModel({
-    required this.name,
-    required this.location,
-    required this.qualification,
-    required this.languages,
-    required this.experience,
-    required this.gender,
-    required this.status,
-    required this.statusColor,
-    required this.role,
-    required this.uploadDate,
-    required this.phone,
-    required this.email,
-    required this.isUnlocked,
-  });
-}
-
 // Unlocked Candidate Detail Page
 class UnlockedCandidateDetailPage extends StatefulWidget {
-  final CandidateModel candidate;
+  final CandidateModelConverter candidate;
   final VoidCallback? onBack;
 
   final int databaseCount;
   final int unlockedCount;
 
   const UnlockedCandidateDetailPage({
-    super.key, 
+    super.key,
     required this.candidate,
     this.onBack,
     required this.databaseCount,
@@ -1544,24 +1949,28 @@ class UnlockedCandidateDetailPage extends StatefulWidget {
   });
 
   @override
-  State<UnlockedCandidateDetailPage> createState() => _UnlockedCandidateDetailPageState();
+  State<UnlockedCandidateDetailPage> createState() =>
+      _UnlockedCandidateDetailPageState();
 }
 
-class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPage> {
+class _UnlockedCandidateDetailPageState
+    extends State<UnlockedCandidateDetailPage> {
   String selectedCallStatus = 'Interested';
 
   @override
   void initState() {
     super.initState();
-    selectedCallStatus = widget.candidate.status;
+    selectedCallStatus = widget.candidate.status ?? '';
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF181A20) : const Color(0xFFF5F5F5),
+      backgroundColor: isDark
+          ? const Color(0xFF181A20)
+          : const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: isDark ? const Color(0xFF23262B) : Colors.white,
         elevation: 0,
@@ -1596,14 +2005,11 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
           Container(
             margin: const EdgeInsets.only(right: 8),
             child: Icon(
-              Icons.add, 
-              color: isDark ? Colors.grey[300] : Colors.grey[600]
+              Icons.add,
+              color: isDark ? Colors.grey[300] : Colors.grey[600],
             ),
           ),
-          Icon(
-            Icons.menu, 
-            color: isDark ? Colors.grey[300] : Colors.grey[600]
-          ),
+          Icon(Icons.menu, color: isDark ? Colors.grey[300] : Colors.grey[600]),
           const SizedBox(width: 16),
         ],
       ),
@@ -1623,14 +2029,24 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
                       widget.onBack!();
                     }
                   },
-                  child: _buildTab('Database', '(${widget.databaseCount})', false, isDark),
+                  child: _buildTab(
+                    'Database',
+                    '(${widget.databaseCount})',
+                    false,
+                    isDark,
+                  ),
                 ),
                 const SizedBox(width: 16),
-                _buildTab('Unlocked', '(${widget.unlockedCount})', true, isDark),
+                _buildTab(
+                  'Unlocked',
+                  '(${widget.unlockedCount})',
+                  true,
+                  isDark,
+                ),
               ],
             ),
           ),
-          
+
           // Scrollable content
           Expanded(
             child: SingleChildScrollView(
@@ -1647,7 +2063,7 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: isDark 
+                          color: isDark
                               ? Colors.black.withOpacity(0.3)
                               : Colors.grey.withOpacity(0.1),
                           spreadRadius: 1,
@@ -1667,32 +2083,39 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    widget.candidate.name,
+                                    widget.candidate.name ?? '',
                                     style: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.w600,
-                                      color: isDark ? Colors.white : Colors.black,
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    widget.candidate.location,
+                                    widget.candidate.location ?? '',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: isDark ? Colors.grey[300] : Colors.grey[600],
+                                      color: isDark
+                                          ? Colors.grey[300]
+                                          : Colors.grey[600],
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.green[100],
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Text(
-                                widget.candidate.role,
+                                widget.candidate.role ?? '',
                                 style: TextStyle(
                                   color: Colors.green[700],
                                   fontSize: 12,
@@ -1707,7 +2130,9 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
                                   context: context,
                                   builder: (context) => AlertDialog(
                                     title: const Text('Edit'),
-                                    content: const Text('Edit feature coming soon!'),
+                                    content: const Text(
+                                      'Edit feature coming soon!',
+                                    ),
                                     actions: [
                                       TextButton(
                                         onPressed: () => Navigator.pop(context),
@@ -1719,22 +2144,32 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
                               },
                               child: Icon(
                                 Icons.edit,
-                                color: isDark ? Colors.grey[500] : Colors.grey[400],
+                                color: isDark
+                                    ? Colors.grey[500]
+                                    : Colors.grey[400],
                                 size: 20,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // Details rows
                         Row(
                           children: [
                             Expanded(
-                              child: _buildDetailRow(Icons.school, widget.candidate.qualification, isDark),
+                              child: _buildDetailRow(
+                                Icons.school,
+                                widget.candidate.qualification ?? '',
+                                isDark,
+                              ),
                             ),
                             Expanded(
-                              child: _buildDetailRow(Icons.language, widget.candidate.languages, isDark),
+                              child: _buildDetailRow(
+                                Icons.language,
+                                widget.candidate.languages ?? '',
+                                isDark,
+                              ),
                             ),
                           ],
                         ),
@@ -1742,15 +2177,23 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
                         Row(
                           children: [
                             Expanded(
-                              child: _buildDetailRow(Icons.work, widget.candidate.experience, isDark),
+                              child: _buildDetailRow(
+                                Icons.work,
+                                widget.candidate.experience ?? '',
+                                isDark,
+                              ),
                             ),
                             Expanded(
-                              child: _buildDetailRow(Icons.person, widget.candidate.gender, isDark),
+                              child: _buildDetailRow(
+                                Icons.person,
+                                widget.candidate.gender ?? '',
+                                isDark,
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // Communication Options
                         Row(
                           children: [
@@ -1760,7 +2203,7 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
                                 label: 'WhatsApp',
                                 color: const Color(0xFF25D366),
                                 onTap: () => _launchWhatsAppWithMessage(
-                                  widget.candidate.phone,
+                                  widget.candidate.phone ?? '',
                                   'Hi,\nI have a job vacancy in your city.\n\nJob Details:\nJob: Sales executive\nSalary: up to Rs.35,000\nCall Me: 9818074659',
                                 ),
                                 isDark: isDark,
@@ -1772,7 +2215,8 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
                                 icon: Icons.phone_outlined,
                                 label: 'Phone',
                                 color: const Color(0xFF2196F3),
-                                onTap: () => _launchPhone(widget.candidate.phone),
+                                onTap: () =>
+                                    _launchPhone(widget.candidate.phone ?? ''),
                                 isDark: isDark,
                               ),
                             ),
@@ -1797,7 +2241,7 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
                                 label: 'SMS',
                                 color: const Color(0xFFFF9800),
                                 onTap: () => _launchSMSWithMessage(
-                                  widget.candidate.phone,
+                                  widget.candidate.phone ?? '',
                                   'Hi,\nI have a job vacancy in your city.\n\nJob: Sales executive\nSalary: up to Rs.35,000\nCall Me: 9818074659',
                                 ),
                                 isDark: isDark,
@@ -1810,7 +2254,7 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
                                 label: 'Email',
                                 color: const Color(0xFFF44336),
                                 onTap: () => _launchEmailWithMessage(
-                                  widget.candidate.email,
+                                  widget.candidate.email ?? '',
                                   'Dear Candidate,\n\nI hope this email finds you well.\n\nI have a job vacancy in your city.\n\nJob Details:\nPosition: Sales executive\nSalary: up to Rs.35,000\nContact: 9818074659\n\nBest regards',
                                 ),
                                 isDark: isDark,
@@ -1818,21 +2262,33 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
                             ),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: _buildRemarksDropdown(widget.candidate, isDark),
+                              child: _buildRemarksDropdown(
+                                widget.candidate,
+                                isDark,
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // Call Status
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: _getStatusColor(selectedCallStatus).withOpacity(0.1),
+                                color: _getStatusColor(
+                                  selectedCallStatus,
+                                ).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: _getStatusColor(selectedCallStatus).withOpacity(0.3)),
+                                border: Border.all(
+                                  color: _getStatusColor(
+                                    selectedCallStatus,
+                                  ).withOpacity(0.3),
+                                ),
                               ),
                               child: Text(
                                 selectedCallStatus,
@@ -1846,7 +2302,7 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
                           ],
                         ),
                         const SizedBox(height: 16),
-                        
+
                         Text(
                           'Uploaded date\n${widget.candidate.uploadDate}',
                           style: TextStyle(
@@ -1867,7 +2323,7 @@ class _UnlockedCandidateDetailPageState extends State<UnlockedCandidateDetailPag
   }
 
   // WhatsApp Dialog for Detail Page
-  void _showWhatsAppDialog(CandidateModel candidate) {
+  void _showWhatsAppDialog(CandidateModelConverter candidate) {
     final TextEditingController messageController = TextEditingController();
     messageController.text = '''Hi,
 I have a job vacancy in your city.
@@ -1947,7 +2403,10 @@ Call Me: 9818074659''';
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        _launchWhatsAppWithMessage(candidate.phone, messageController.text);
+                        _launchWhatsAppWithMessage(
+                          candidate.phone ?? '',
+                          messageController.text,
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2196F3),
@@ -1969,7 +2428,7 @@ Call Me: 9818074659''';
   }
 
   // SMS Dialog for Detail Page
-  void _showSMSDialog(CandidateModel candidate) {
+  void _showSMSDialog(CandidateModelConverter candidate) {
     final TextEditingController messageController = TextEditingController();
     messageController.text = '''Hi,
 I have a job vacancy in your city.
@@ -2048,7 +2507,10 @@ Call Me: 9818074659''';
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        _launchSMSWithMessage(candidate.phone, messageController.text);
+                        _launchSMSWithMessage(
+                          candidate.phone ?? '',
+                          messageController.text,
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2196F3),
@@ -2070,7 +2532,7 @@ Call Me: 9818074659''';
   }
 
   // Email Dialog for Detail Page
-  void _showEmailDialog(CandidateModel candidate) {
+  void _showEmailDialog(CandidateModelConverter candidate) {
     final TextEditingController messageController = TextEditingController();
     messageController.text = '''Dear Candidate,
 
@@ -2155,7 +2617,10 @@ Best regards''';
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        _launchEmailWithMessage(candidate.email, messageController.text);
+                        _launchEmailWithMessage(
+                          candidate.email ?? '',
+                          messageController.text,
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2196F3),
@@ -2180,7 +2645,7 @@ Best regards''';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected 
+        color: isSelected
             ? (isDark ? primaryBlue.withOpacity(0.2) : Colors.blue[100])
             : (isDark ? Colors.grey[800] : Colors.grey[200]),
         borderRadius: BorderRadius.circular(20),
@@ -2191,7 +2656,7 @@ Best regards''';
           Text(
             title,
             style: TextStyle(
-              color: isSelected 
+              color: isSelected
                   ? (isDark ? primaryBlue : Colors.blue[700])
                   : (isDark ? Colors.grey[300] : Colors.grey[600]),
               fontSize: 14,
@@ -2202,7 +2667,7 @@ Best regards''';
           Text(
             count,
             style: TextStyle(
-              color: isSelected 
+              color: isSelected
                   ? (isDark ? primaryBlue : Colors.blue[700])
                   : (isDark ? Colors.grey[300] : Colors.grey[600]),
               fontSize: 14,
@@ -2217,9 +2682,9 @@ Best regards''';
     return Row(
       children: [
         Icon(
-          icon, 
-          size: 16, 
-          color: isDark ? Colors.grey[400] : Colors.grey[600]
+          icon,
+          size: 16,
+          color: isDark ? Colors.grey[400] : Colors.grey[600],
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -2256,11 +2721,7 @@ Best regards''';
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: color,
-              size: 16,
-            ),
+            Icon(icon, color: color, size: 16),
             const SizedBox(width: 4),
             Text(
               label,
@@ -2277,7 +2738,7 @@ Best regards''';
   }
 
   // CORRECTED: Dropdown with proper positioning and reduced gaps for detail page
-  Widget _buildRemarksDropdown(CandidateModel candidate, bool isDark) {
+  Widget _buildRemarksDropdown(CandidateModelConverter candidate, bool isDark) {
     final List<String> statusOptions = [
       'Interested',
       'RNR',
@@ -2293,7 +2754,6 @@ Best regards''';
         if (newValue != null) {
           setState(() {
             candidate.status = newValue;
-            candidate.statusColor = _getStatusColor(newValue);
             selectedCallStatus = newValue;
           });
         }
@@ -2337,8 +2797,8 @@ Best regards''';
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? Colors.grey[600]! : Colors.grey[400]!, 
-            width: 1
+            color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+            width: 1,
           ),
         ),
         child: Row(
@@ -2373,7 +2833,9 @@ Best regards''';
       case 'RNR':
         return const Color(0xFFD82D1A); // #D82D1A
       case 'Busy':
-        return const Color(0xFFE67E22); // Using darker orange for better visibility
+        return const Color(
+          0xFFE67E22,
+        ); // Using darker orange for better visibility
       case 'Contact again':
         return const Color(0xFF407BFF); // #407BFF
       case 'Pending':
@@ -2386,7 +2848,9 @@ Best regards''';
   }
 
   Future<void> _launchWhatsAppWithMessage(String phone, String message) async {
-    final Uri whatsappUri = Uri.parse("https://wa.me/$phone?text=${Uri.encodeComponent(message)}");
+    final Uri whatsappUri = Uri.parse(
+      "https://wa.me/$phone?text=${Uri.encodeComponent(message)}",
+    );
     if (await canLaunchUrl(whatsappUri)) {
       await launchUrl(whatsappUri);
     }
@@ -2400,14 +2864,18 @@ Best regards''';
   }
 
   Future<void> _launchSMSWithMessage(String phone, String message) async {
-    final Uri smsUri = Uri.parse("sms:$phone?body=${Uri.encodeComponent(message)}");
+    final Uri smsUri = Uri.parse(
+      "sms:$phone?body=${Uri.encodeComponent(message)}",
+    );
     if (await canLaunchUrl(smsUri)) {
       await launchUrl(smsUri);
     }
   }
 
   Future<void> _launchEmailWithMessage(String email, String message) async {
-    final Uri emailUri = Uri.parse("mailto:$email?subject=Job Opportunity&body=${Uri.encodeComponent(message)}");
+    final Uri emailUri = Uri.parse(
+      "mailto:$email?subject=Job Opportunity&body=${Uri.encodeComponent(message)}",
+    );
     if (await canLaunchUrl(emailUri)) {
       await launchUrl(emailUri);
     }
