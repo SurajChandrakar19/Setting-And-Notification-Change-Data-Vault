@@ -27,6 +27,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
   // List<Map<String, dynamic>> get applications => globalApplications;
   List<Map<String, dynamic>> applications = [];
   static var userId = "";
+  UserProvider? userProvider;
   // Filter options
   String selectedFilter = 'All';
   List<String> filterOptions = [
@@ -54,12 +55,10 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
   @override
   void initState() {
     super.initState();
-    userId =
-        Provider.of<UserProvider>(
-          context,
-          listen: false,
-        ).accessToken?.toString() ??
-        '';
+    userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    userId = userProvider?.accessToken.toString() ?? '';
+    // Load applications data
     _loadApplication();
   }
 
@@ -660,7 +659,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(context); // Close confirmation dialog
               _performStatusUpdate(application, newStatus);
             },
             child: const Text('Update'),
@@ -728,14 +727,15 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
     );
 
     try {
-      final success = await CandidateTrack.updateStatus(
-        application['trackerId'].toString(),
-        newStatus.toUpperCase(),
-        userId,
+      final bool success = await CandidateTrackService.updateStatus(
+        candidateId: application['candidateId'].toInt(),
+        userId: userProvider?.id ?? 0,
+        status: newStatus,
+        accessToken:
+            userProvider?.accessToken ?? '', // Ensure token is available
       );
 
       if (!mounted) return;
-
       Navigator.pop(loaderContext); // Close loader
 
       if (success) {
@@ -745,12 +745,14 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
           );
           if (idx != -1) applications[idx]['status'] = newStatus;
         });
+
         _notificationService.addNotification(
           title: 'Status Updated',
           message: '${application['candidateName']} is now $newStatus',
           type: NotificationType.general,
           candidateName: application['candidateName'],
         );
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Status changed to $newStatus'),

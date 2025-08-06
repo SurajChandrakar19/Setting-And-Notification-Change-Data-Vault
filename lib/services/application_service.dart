@@ -155,3 +155,44 @@ class CandidateTrack {
     }
   }
 }
+
+class CandidateTrackService {
+  static const String baseUrl = HostService.baseUrl;
+
+  static Future<bool> updateStatus({
+    required int candidateId,
+    required int userId,
+    required String status,
+    required String accessToken,
+  }) async {
+    final url = Uri.parse('$baseUrl/applications');
+
+    final body = jsonEncode({
+      'candidateId': candidateId,
+      'userId': userId,
+      'status': status.toUpperCase(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print('❌ Failed with status: ${response.statusCode}');
+        print('❌ Response body: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('❌ Exception during updateStatus: $e');
+      return false;
+    }
+  }
+}

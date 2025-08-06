@@ -1887,22 +1887,24 @@ class _ReportDialogState extends State<_ReportDialog> {
   bool _isYearlySelected = false; // Start with Monthly selected
 
   // Monthly data (from first screenshot)
-  final Map<String, String> _monthlyData = {
-    'Target': '5',
-    'Turn-up': '6',
-    'Selection': '14',
-    'Joining': '5',
-    'Closer': '9',
-  };
+  Map<String, String> _monthlyData = {};
+  // {
+  //   'Target': '5',
+  //   'Turn-up': '6',
+  //   'Selection': '14',
+  //   'Joining': '5',
+  //   'Closer': '9',
+  // };
 
   // Yearly data (from second screenshot)
-  final Map<String, String> _yearlyData = {
-    'Target': '60',
-    'Turn-up': '72',
-    'Selection': '168',
-    'Joining': '60',
-    'Closer': '108',
-  };
+  Map<String, String> _yearlyData = {};
+  // {
+  //   'Target': '60',
+  //   'Turn-up': '72',
+  //   'Selection': '168',
+  //   'Joining': '60',
+  //   'Closer': '108',
+  // };
 
   void _shareReport() {
     final period = _isYearlySelected ? 'Yearly' : 'Monthly';
@@ -1916,6 +1918,14 @@ class _ReportDialogState extends State<_ReportDialog> {
     });
 
     Share.share(shareText);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Load monthly data (if needed)
+    _loadYearlyStats();
+    _loadMonthlyStats();
   }
 
   @override
@@ -2005,6 +2015,8 @@ class _ReportDialogState extends State<_ReportDialog> {
                         setState(() {
                           _isYearlySelected = true;
                         });
+
+                        // _loadYearlyStats(); // Call your API
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -2113,6 +2125,47 @@ class _ReportDialogState extends State<_ReportDialog> {
         ),
       ),
     );
+  }
+
+  Future<void> _loadYearlyStats() async {
+    final stats = await ReportService().fetchYearlyStats(
+      userId: widget.candidate['id'].toString(),
+      year: DateTime.now().year.toString(),
+      token: _HomeTabScreenState.userProvider?.accessToken.toString() ?? '',
+    );
+
+    if (stats != null) {
+      setState(() {
+        _yearlyData = {
+          'Target': stats.targetCount.toString(),
+          'Turn-up': stats.goForInterviewCount.toString(),
+          'Selection': stats.selectedCandidateCount.toString(),
+          'Joining': stats.joiningCandidateCount.toString(),
+          'Closer': '0', // optional if not from backend
+        };
+      });
+    }
+  }
+
+  Future<void> _loadMonthlyStats() async {
+    final stats = await ReportService().fetchMonthlyStats(
+      userId: widget.candidate['id'].toString(),
+      year: DateTime.now().year.toString(),
+      month: DateTime.now().month.toString(),
+      token: _HomeTabScreenState.userProvider?.accessToken.toString() ?? '',
+    );
+
+    if (stats != null) {
+      setState(() {
+        _monthlyData = {
+          'Target': stats.targetCount.toString(),
+          'Turn-up': stats.goForInterviewCount.toString(),
+          'Selection': stats.selectedCandidateCount.toString(),
+          'Joining': stats.joiningCandidateCount.toString(),
+          'Closer': '0', // optional if not from backend
+        };
+      });
+    }
   }
 
   Widget _buildMetricColumn(String label, String value) {

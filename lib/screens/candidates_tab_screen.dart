@@ -12,6 +12,7 @@ import 'package:path_provider/path_provider.dart';
 import '../services/candidate_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../services/resume_service.dart';
 
 class CandidatesTabScreen extends StatefulWidget {
   final VoidCallback onBackToHome;
@@ -272,11 +273,21 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
                     const Spacer(),
                     // View Resume button
                     ElevatedButton(
-                      onPressed: () {
-                        print(
-                          'View Resume for ${(candidate['name'] ?? '').toString()}',
-                        );
-                        // TODO: Implement view resume functionality
+                      onPressed: () async {
+                        try {
+                          await ResumeService.downloadAndOpenResume(
+                            candidateId: int.parse(candidate['id'].toString()),
+                            token: userProvider?.accessToken ?? '',
+                          );
+                          print('Resume downloaded successfully.');
+                        } catch (e) {
+                          print('Error downloading resume: $e');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to download resume'),
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFE3F2FD),
