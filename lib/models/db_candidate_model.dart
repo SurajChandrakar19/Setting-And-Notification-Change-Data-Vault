@@ -78,6 +78,63 @@ class CandidateDBDTO {
   }
 }
 
+// class CandidateModelConverter {
+//   final String candidateId;
+//   final String? name;
+//   final String? location;
+//   final String? qualification;
+//   final String? languages;
+//   final String? experience;
+//   final String? gender;
+//   final String? age;
+//   String? status;
+//   final String? role;
+//   final String? uploadDate;
+//   final String? phone;
+//   final String? email;
+//   bool? isUnlocked;
+
+//   CandidateModelConverter({
+//     required this.candidateId,
+//     this.name,
+//     this.location,
+//     this.qualification,
+//     this.languages,
+//     this.experience,
+//     this.gender,
+//     this.age,
+//     this.status,
+//     this.role,
+//     this.uploadDate,
+//     this.phone,
+//     this.email,
+//     this.isUnlocked,
+//   });
+
+//   factory CandidateModelConverter.fromJson(Map<String, dynamic> json) {
+//     return CandidateModelConverter(
+//       candidateId: json['candidateDBId'].toString(),
+//       name: json['name'],
+//       location: json['location'],
+//       qualification: json['qualification'],
+//       languages: json['languages'],
+//       experience: json['experience'],
+//       gender: json['gender'],
+//       age: json['age']?.toString(),
+//       role: json['role'],
+//       uploadDate: json['uploadDate'],
+//       phone: json['phone'],
+//       email: json['email'],
+//       isUnlocked: json['unlocked'],
+
+//       // Optional: You can extract status from statusList if needed
+//       status: (json['statusList'] as List).isNotEmpty
+//           ? json['statusList'][0]['status']
+//           : null,
+//     );
+//   }
+// }
+
 class CandidateModelConverter {
   final String candidateId;
   final String? name;
@@ -93,6 +150,7 @@ class CandidateModelConverter {
   final String? phone;
   final String? email;
   bool? isUnlocked;
+  final List<StatusDTO>? statusList;
 
   CandidateModelConverter({
     required this.candidateId,
@@ -109,9 +167,14 @@ class CandidateModelConverter {
     this.phone,
     this.email,
     this.isUnlocked,
+    this.statusList,
   });
 
   factory CandidateModelConverter.fromJson(Map<String, dynamic> json) {
+    List<StatusDTO>? statuses = (json['statusList'] as List?)
+        ?.map((e) => StatusDTO.fromJson(e))
+        .toList();
+
     return CandidateModelConverter(
       candidateId: json['candidateDBId'].toString(),
       name: json['name'],
@@ -126,10 +189,8 @@ class CandidateModelConverter {
       phone: json['phone'],
       email: json['email'],
       isUnlocked: json['unlocked'],
-      // Optional: You can extract status from statusList if needed
-      status: (json['statusList'] as List).isNotEmpty
-          ? json['statusList'][0]['status']
-          : null,
+      statusList: statuses,
+      status: statuses?.isNotEmpty == true ? statuses!.first.statusName : null,
     );
   }
 }

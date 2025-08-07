@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:headsup_ats/screens/onboarding_screen.dart';
+import 'package:headsup_ats/services/auth_service.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/notification_service.dart'
     show NotificationItem, NotificationType, NotificationService;
@@ -1346,9 +1348,36 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    // Add your logout logic here
+                  onPressed: () async {
+                    final accessToken = userProvider?.accessToken;
+
+                    // Call logout service method
+                    final success = await AuthService.logout(accessToken);
+
+                    // Clear user data from provider
+                    userProvider?.logout();
+
+                    if (!context.mounted) return;
+
+                    // Show feedback
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          success
+                              ? 'Logout successful'
+                              : 'Logout failed or network issue',
+                        ),
+                      ),
+                    );
+
+                    // Navigate to OnboardingScreen and clear previous routes
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const OnboardingScreen(),
+                      ),
+                      (route) => false, // Remove all previous routes
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red[400],

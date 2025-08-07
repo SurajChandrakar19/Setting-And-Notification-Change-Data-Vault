@@ -54,6 +54,21 @@ class _DataVaultPageState extends State<DataVaultPage> {
     _initializeCandidates();
   }
 
+  String _getStatusKey(StatusDTO status) {
+    return '${status.statusName}-${status.addedDate}';
+  }
+
+  String? _getStatusKeyFromName(
+    String? statusName,
+    List<StatusDTO> statusList,
+  ) {
+    final match = statusList.firstWhere(
+      (s) => s.statusName == statusName,
+      orElse: () => StatusDTO(statusName: '', addedDate: ''),
+    );
+    return _getStatusKey(match);
+  }
+
   void _initializeCandidates() async {
     final candidateService = CadidateDBService();
     try {
@@ -802,6 +817,10 @@ class _DataVaultPageState extends State<DataVaultPage> {
     final isDropdownOpen = isUnlockedTab
         ? openUnlockedDropdowns.contains(candidate.candidateId)
         : openUnlockPanelKeys.contains(candidate.candidateId);
+    final List<StatusDTO> statusList = candidate.statusList ?? [];
+    final StatusDTO? selectedStatus = statusList.isNotEmpty
+        ? statusList.last
+        : null;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -1121,12 +1140,13 @@ class _DataVaultPageState extends State<DataVaultPage> {
             // Removed custom dropdown arrow and dropdown content for unlocked candidates
             const SizedBox(height: 16),
             // Status section
+            // Status dropdown
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
-                    vertical: 4,
+                    vertical: 2,
                   ),
                   decoration: BoxDecoration(
                     color: _getStatusColor(
@@ -1139,12 +1159,87 @@ class _DataVaultPageState extends State<DataVaultPage> {
                       ).withOpacity(0.3),
                     ),
                   ),
-                  child: Text(
-                    candidate.status ?? '',
-                    style: TextStyle(
-                      color: _getStatusColor(candidate.status ?? ''),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  child: DropdownButtonHideUnderline(
+                    child: SizedBox(
+                      width: 130, // 👈 Set max width
+                      child: DropdownButton<String>(
+                        isDense: true, // 👈 Reduce height
+                        value: selectedStatus != null
+                            ? _getStatusKey(selectedStatus)
+                            : null,
+                        icon: const Icon(Icons.arrow_drop_down, size: 18),
+                        style: TextStyle(
+                          color: _getStatusColor(
+                            selectedStatus?.statusName ?? '',
+                          ),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        onChanged: (String? newKey) {
+                          final matchedStatus = statusList.firstWhere(
+                            (s) => _getStatusKey(s) == newKey,
+                            orElse: () =>
+                                StatusDTO(statusName: '', addedDate: ''),
+                          );
+
+                          setState(() {
+                            candidate.status = matchedStatus.statusName;
+                          });
+                        },
+                        selectedItemBuilder: (BuildContext context) {
+                          return statusList.map((StatusDTO status) {
+                            // 👇 Show only name (not year) when dropdown is closed
+                            return Text(
+                              status.statusName ?? '',
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          }).toList();
+                        },
+                        items: statusList.map((StatusDTO status) {
+                          final key = _getStatusKey(status);
+
+                          String? formattedDate = '';
+                          if (status.addedDate != null &&
+                              status.addedDate!.isNotEmpty) {
+                            try {
+                              final DateTime parsed = DateTime.parse(
+                                status.addedDate!,
+                              );
+                              formattedDate =
+                                  '${parsed.day.toString().padLeft(2, '0')}/'
+                                  '${parsed.month.toString().padLeft(2, '0')}/'
+                                  '${parsed.year.toString().substring(2)}'; // 👈 DD/MM/YY
+                            } catch (e) {
+                              formattedDate = '';
+                            }
+                          }
+
+                          return DropdownMenuItem<String>(
+                            value: key,
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    status.statusName ?? '',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                                if (formattedDate.isNotEmpty) ...[
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    "($formattedDate)",
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ),
                 ),
@@ -1156,10 +1251,11 @@ class _DataVaultPageState extends State<DataVaultPage> {
               children: [
                 Row(
                   children: [
+                    // Status dropdown inside decorated container
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
-                        vertical: 4,
+                        vertical: 2,
                       ),
                       decoration: BoxDecoration(
                         color: _getStatusColor(
@@ -1172,17 +1268,90 @@ class _DataVaultPageState extends State<DataVaultPage> {
                           ).withOpacity(0.3),
                         ),
                       ),
-                      child: Text(
-                        candidate.status ?? '',
-                        style: TextStyle(
-                          color: _getStatusColor(candidate.status ?? ''),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                      child: DropdownButtonHideUnderline(
+                        child: SizedBox(
+                          width: 130, // Set max width
+                          child: DropdownButton<String>(
+                            isDense: true,
+                            value: _getStatusKeyFromName(
+                              candidate.status,
+                              statusList,
+                            ),
+                            icon: const Icon(Icons.arrow_drop_down, size: 18),
+                            style: TextStyle(
+                              color: _getStatusColor(candidate.status ?? ''),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            onChanged: (String? newKey) {
+                              final matchedStatus = statusList.firstWhere(
+                                (s) => _getStatusKey(s) == newKey,
+                                orElse: () =>
+                                    StatusDTO(statusName: '', addedDate: ''),
+                              );
+                              setState(() {
+                                candidate.status = matchedStatus.statusName;
+                              });
+                            },
+                            selectedItemBuilder: (BuildContext context) {
+                              return statusList.map((StatusDTO status) {
+                                return Text(
+                                  status.statusName ?? '',
+                                  overflow: TextOverflow.ellipsis,
+                                );
+                              }).toList();
+                            },
+                            items: statusList.map((StatusDTO status) {
+                              final key = _getStatusKey(status);
+                              String? formattedDate = '';
+                              if (status.addedDate != null &&
+                                  status.addedDate!.isNotEmpty) {
+                                try {
+                                  final DateTime parsed = DateTime.parse(
+                                    status.addedDate!,
+                                  );
+                                  formattedDate =
+                                      '${parsed.day.toString().padLeft(2, '0')}/'
+                                      '${parsed.month.toString().padLeft(2, '0')}/'
+                                      '${parsed.year.toString().substring(2)}';
+                                } catch (e) {
+                                  formattedDate = '';
+                                }
+                              }
+
+                              return DropdownMenuItem<String>(
+                                value: key,
+                                child: Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        status.statusName ?? '',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                    if (formattedDate.isNotEmpty) ...[
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "($formattedDate)",
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
                     ),
+
                     const Spacer(),
-                    // Show the unlock button only if not unlocked and panel not open
+
+                    // Unlock button (unchanged)
                     if (!(candidate.isUnlocked ?? false) &&
                         !openUnlockPanelKeys.contains(candidate.candidateId))
                       ElevatedButton(

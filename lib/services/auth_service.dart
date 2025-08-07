@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_login_response.dart'; // adjust path as needed
 import 'package:google_sign_in/google_sign_in.dart';
 import '../services/host_service.dart';
@@ -24,6 +26,25 @@ class AuthService {
     } catch (e) {
       print('Login error: $e');
       return null;
+    }
+  }
+
+  static Future<bool> logout(String? accessToken) async {
+    if (accessToken == null) return false;
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/logout'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Logout error: $e');
+      return false;
     }
   }
 }
