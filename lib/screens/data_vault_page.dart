@@ -1,11 +1,9 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:csv/csv.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:headsup_ats/models/Candidate_model.dart';
 import 'package:headsup_ats/models/db_candiate_status_model.dart';
 import 'package:headsup_ats/models/db_candidate_model.dart';
 import 'package:headsup_ats/models/db_vault_model.dart';
@@ -14,7 +12,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../utils/app_colors.dart';
 import 'dashboard_shell_screen.dart';
-import '../services/database_service.dart';
 import '../providers/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'dart:io' as io;
@@ -645,7 +642,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['csv'],
-        withData: kIsWeb, // Required for web
+        withData: kIsWeb, // Only needed on web
       );
 
       if (result == null) {
@@ -658,10 +655,18 @@ class _DataVaultPageState extends State<DataVaultPage> {
       String csvString;
 
       if (kIsWeb) {
-        Uint8List fileBytes = result.files.single.bytes!;
-        csvString = utf8.decode(fileBytes);
+        // WEB-SAFE block
+        final bytes = result.files.single.bytes;
+        if (bytes == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("❌ Could not read file bytes.")),
+          );
+          return;
+        }
+        csvString = utf8.decode(bytes);
       } else {
-        String? path = result.files.single.path;
+        // ANDROID/iOS block
+        final path = result.files.single.path;
         if (path == null) {
           ScaffoldMessenger.of(
             context,
@@ -672,6 +677,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
         csvString = await file.readAsString();
       }
 
+      // Parse CSV
       List<List<dynamic>> rows = const CsvToListConverter().convert(csvString);
 
       if (rows.length < 2) {
@@ -681,10 +687,10 @@ class _DataVaultPageState extends State<DataVaultPage> {
         return;
       }
 
-      // Trim headers
       List<String> headers = rows.first
           .map((e) => e.toString().trim())
           .toList();
+
       List<CandidateDB> candidates = [];
 
       for (int i = 1; i < rows.length; i++) {
@@ -734,7 +740,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
       await _sendToBackend(
         context,
         candidates,
-        userProvider!.accessToken.toString() ?? '',
+        userProvider!.accessToken.toString(),
       );
     } catch (e, st) {
       debugPrint("❌ Error while uploading CSV: $e\n$st");

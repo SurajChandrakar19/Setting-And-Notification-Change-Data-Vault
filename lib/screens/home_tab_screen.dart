@@ -27,7 +27,7 @@ class HomeTabScreen extends StatefulWidget {
 class _HomeTabScreenState extends State<HomeTabScreen> {
   final NotificationService _notificationService = NotificationService();
   final TextEditingController _phoneController = TextEditingController();
-  String _targetInterviewScheduled = '';
+  final String _targetInterviewScheduled = '';
 
   // Time period selection
   String selectedPeriod = 'Weekly';
@@ -741,7 +741,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       decoration: const BoxDecoration(color: Color(0xFF0A7FF1)),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.previousMonth?.monthName ?? 'N/A'),
+                          (dashboardSummary?.previousMonth.monthName ?? 'N/A'),
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
@@ -755,7 +755,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       decoration: const BoxDecoration(color: Color(0xFF0A7FF1)),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.currentMonth?.monthName ?? 'N/A'),
+                          (dashboardSummary?.currentMonth.monthName ?? 'N/A'),
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
@@ -775,7 +775,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.nextMonth?.monthName ?? 'N/A'),
+                          (dashboardSummary?.nextMonth.monthName ?? 'N/A'),
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
@@ -817,7 +817,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       decoration: const BoxDecoration(color: Color(0xFF0A7FF1)),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.previousMonth?.totalTarget
+                          (dashboardSummary?.previousMonth.totalTarget
                                   .toString() ??
                               '0'),
                           style: TextStyle(
@@ -833,7 +833,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       decoration: const BoxDecoration(color: Color(0xFF0A7FF1)),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.currentMonth?.totalTarget
+                          (dashboardSummary?.currentMonth.totalTarget
                                   .toString() ??
                               '0'),
                           style: TextStyle(
@@ -855,7 +855,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.nextMonth?.totalTarget
+                          (dashboardSummary?.nextMonth.totalTarget
                                   .toString() ??
                               '0'),
                           style: TextStyle(
@@ -899,7 +899,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       decoration: const BoxDecoration(color: Color(0xFF0A7FF1)),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.previousMonth?.totalAchieved
+                          (dashboardSummary?.previousMonth.totalAchieved
                                   .toString() ??
                               '0'),
                           style: TextStyle(
@@ -915,7 +915,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       decoration: const BoxDecoration(color: Color(0xFF0A7FF1)),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.currentMonth?.totalAchieved
+                          (dashboardSummary?.currentMonth.totalAchieved
                                   .toString() ??
                               '0'),
                           style: TextStyle(
@@ -937,7 +937,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.nextMonth?.totalAchieved
+                          (dashboardSummary?.nextMonth.totalAchieved
                                   .toString() ??
                               '0'),
                           style: TextStyle(

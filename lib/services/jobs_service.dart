@@ -1,15 +1,19 @@
 import 'dart:convert';
-import 'dart:io'; // Only for mobile/desktop
-import 'dart:typed_data';
-import 'dart:js_interop';
-import 'package:web/web.dart' as web;
+import 'dart:io';
+// Only for mobile/desktop
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 
 // Remove these if not used:
 import '../models/job_model_create.dart';
 import '../services/host_service.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:universal_html/html.dart' as html;
 
 // import 'dart:html' as html;
 
@@ -201,4 +205,55 @@ class JobService {
   //     return false;
   //   }
   // }
+
+  static Future<void> downloadJobsCSV(String jwtToken) async {
+    final url = Uri.parse('$baseUrl/jobs/export');
+    final fileName = 'jobs_${DateTime.now().millisecondsSinceEpoch}.csv';
+
+    final response = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer $jwtToken', 'Accept': 'text/csv'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to download CSV. Status: ${response.statusCode}');
+    }
+
+    final csvBytes = response.bodyBytes;
+
+    if (kIsWeb) {
+      // ✅ Web-specific CSV download logic using universal_html
+      final blob = html.Blob([csvBytes], 'text/csv');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor = html.AnchorElement(href: url)
+        ..setAttribute("download", fileName)
+        ..click();
+      html.Url.revokeObjectUrl(url);
+      return;
+    }
+
+    if (!(Platform.isAndroid || Platform.isIOS)) {
+      throw UnsupportedError(
+        'CSV download supported only on Android, iOS, or Web.',
+      );
+    }
+
+    // ✅ Mobile: Write file and open
+    if (Platform.isAndroid) {
+      final permission = await Permission.storage.request();
+      if (!permission.isGranted) {
+        throw Exception('Storage permission denied.');
+      }
+    }
+
+    final dir = await getApplicationDocumentsDirectory();
+    final filePath = '${dir.path}/$fileName';
+    final file = File(filePath);
+    await file.writeAsBytes(csvBytes);
+
+    final result = await OpenFilex.open(filePath);
+    if (result.type != ResultType.done) {
+      throw Exception('Failed to open file: ${result.message}');
+    }
+  }
 }

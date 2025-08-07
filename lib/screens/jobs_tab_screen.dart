@@ -127,20 +127,15 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
           elevation: 1,
           actions: [
             IconButton(
-              icon: Icon(
-                Icons.download,
-                color: Theme.of(context).iconTheme.color,
-              ),
-              tooltip: 'Download',
+              icon: Icon(Icons.download),
               onPressed: () async {
                 try {
-                  // Replace with your actual user ID variable
-                  // const userId = '123'; // or get it from context/auth state
-                  // await JobService.downloadJobsCSV(userId);
+                  // final token = await userId; // Load from shared_preferences
+                  await JobService.downloadJobsCSV(userId);
 
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('CSV downloaded successfully.'),
+                    SnackBar(
+                      content: Text('CSV downloaded & opened'),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -766,7 +761,8 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
                                                   );
                                                   if (confirm == true) {
                                                     try {
-                                                      await JobService.deleteJob(userId,
+                                                      await JobService.deleteJob(
+                                                        userId,
                                                         job.id!,
                                                       );
                                                       setState(() {

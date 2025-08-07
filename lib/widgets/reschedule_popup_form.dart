@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/company_model.dart';
 import '../services/candidate_service.dart'; // Import your service for fetching companies
-import '../models/company_model.dart';
 import '../providers/user_provider.dart'; // Import your user provider if needed
 import '../models/reschedule_candidate.dart'; // Import your DTO model
 

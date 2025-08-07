@@ -1,6 +1,5 @@
 // candidate_db_dto.dart
 import '../models/db_candiate_status_model.dart';
-import 'package:flutter/material.dart';
 
 class CandidateDBDTO {
   final int? candidateDBId;

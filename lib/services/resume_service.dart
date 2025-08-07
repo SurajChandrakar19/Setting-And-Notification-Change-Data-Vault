@@ -30,7 +30,7 @@ class ResumeService {
       final contentDisposition = response.headers['content-disposition'];
       final fileName =
           _extractFileName(contentDisposition ?? '') ??
-          'resume_${candidateId}.pdf';
+          'resume_$candidateId.pdf';
 
       final bytes = response.bodyBytes;
 
@@ -59,7 +59,7 @@ class ResumeService {
   static String? _extractFileName(String contentDisposition) {
     final regex = RegExp(r'filename="?(.+)"?');
     final match = regex.firstMatch(contentDisposition);
-    return match != null ? match.group(1) : null;
+    return match?.group(1);
   }
 
   static Future<io.Directory> getTemporaryDirectory() async {

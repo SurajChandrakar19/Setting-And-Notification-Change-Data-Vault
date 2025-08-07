@@ -301,15 +301,9 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
         orElse: () => CompanyIdName(id: 0, companyName: 'No Company'),
       );
 
-      if (selectedCompany == null) {
-        // Handle case where no company was found
-        print("No company found with ID: $companyId");
-        // You might want to show a message to the user or take other actions.
-      } else {
-        // Proceed with your logic for the selected company
-        print("Selected Company: ${selectedCompany.companyName}");
-      }
-    } catch (e) {
+      // Proceed with your logic for the selected company
+      print("Selected Company: ${selectedCompany.companyName}");
+        } catch (e) {
       // Log the error if necessary
       print("Error in _onCompanySelected: $e");
     }

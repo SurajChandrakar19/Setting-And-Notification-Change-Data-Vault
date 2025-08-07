@@ -172,7 +172,7 @@ class AddCandidateService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true; // Success
       } else {
-        print('Failed: ${response.statusCode}, ${responseBody}');
+        print('Failed: ${response.statusCode}, $responseBody');
         return false; // Failure
       }
     } catch (e) {

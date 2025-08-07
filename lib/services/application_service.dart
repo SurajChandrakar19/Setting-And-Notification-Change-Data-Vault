@@ -1,13 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:path_provider/path_provider.dart';
 import '../services/host_service.dart';
-import 'dart:convert';
-import 'dart:typed_data';
-import 'dart:js_interop';
-import 'package:web/web.dart' as web;
 // import 'dart:html' as html;
 
 class ReachedCandidateService {
