@@ -3,14 +3,29 @@ import 'package:provider/provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'utils/app_colors.dart';
 import 'providers/user_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../screens/home_tab_screen.dart'; // replace with your home page
+import '../screens/login_screen.dart';
+import '../utils/token_storage.dart'; // Import your TokenStorage utility
+import '../services/token_service.dart'; // Import your TokenService
+import 'screens/dashboard_shell_screen.dart';
 
 // Export for use in other files
 ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.light);
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // restore user before runApp
+  final userProvider = UserProvider();
+  await userProvider.restoreUser();
+
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => UserProvider())],
+      // providers: [ChangeNotifierProvider(create: (_) => UserProvider())],
+      providers: [
+        ChangeNotifierProvider<UserProvider>.value(value: userProvider),
+      ],
       child: const MyApp(),
     ),
   );
@@ -103,8 +118,64 @@ class MyApp extends StatelessWidget {
           ),
           themeMode: mode,
           debugShowCheckedModeBanner: false,
-          home: const OnboardingScreen(),
+          // home: const OnboardingScreen(),
+          home: const AppEntry(), // Start page logic moved to AppEntry
         );
+      },
+    );
+  }
+}
+
+class AppEntry extends StatelessWidget {
+  const AppEntry({super.key});
+
+  Future<Widget> _getStartPage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isOnboardingShown = prefs.getBool('isOnboardingShown') ?? false;
+
+    final tokens = await TokenStorage.getTokens();
+    final accessToken = tokens['accessToken'];
+
+    if (!isOnboardingShown) {
+      return const OnboardingScreen();
+    } else if (accessToken != null && accessToken.isNotEmpty) {
+      // ✅ Try refreshing access token before showing home
+      final refreshed = await TokenService.refreshAccessToken();
+      if (refreshed) {
+        // return const HomeTabScreen();
+        return const DashboardShellScreen();
+      } else {
+        return const LoginScreen();
+      }
+    } else {
+      return const LoginScreen();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Widget>(
+      future: _getStartPage(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        } else if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Text(
+                "Error: ${snapshot.error}",
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+          );
+        } else if (snapshot.hasData && snapshot.data != null) {
+          return snapshot.data!;
+        } else {
+          // Fallback just in case null slips through
+          return const LoginScreen();
+        }
       },
     );
   }

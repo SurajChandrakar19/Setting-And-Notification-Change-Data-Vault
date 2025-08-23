@@ -174,12 +174,11 @@ class _EditCandidatePopupState extends State<EditCandidatePopup> {
                           int.tryParse(ageController.text) ??
                           widget.candidate['age'];
 
-                      final candidateService = CandidateService();
+                      // final candidateService = CandidateService();
 
-                      bool success = await candidateService.updateCandidate(
-                        updatedCandidate,
-                        candidateId,
-                        userProvider?.accessToken ?? '',
+                      bool success = await CandidateService.updateCandidate(
+                        candidate: updatedCandidate,
+                        candidateId: candidateId,
                       );
 
                       if (success) {

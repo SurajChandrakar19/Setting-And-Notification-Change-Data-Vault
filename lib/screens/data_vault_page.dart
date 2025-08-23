@@ -70,13 +70,9 @@ class _DataVaultPageState extends State<DataVaultPage> {
     final candidateService = CadidateDBService();
     try {
       // Replace with actual values
-      int userId = userProvider?.id ?? 0;
-      String accessToken = userProvider?.accessToken ?? '';
+      String userId = userProvider?.userId ?? '';
 
-      final candidates = await candidateService.getAllLockedCandidates(
-        userId,
-        accessToken,
-      );
+      final candidates = await candidateService.getAllLockedCandidates(userId);
 
       setState(() {
         allCandidates = candidates;
@@ -119,54 +115,174 @@ class _DataVaultPageState extends State<DataVaultPage> {
 
   void _applyFilters() {
     setState(() {
-      filteredDatabaseCandidates = databaseCandidates
-          .where(
-            (c) =>
-                (selectedStatusFilter == 'All' ||
-                    (c.status ?? '').toLowerCase() ==
-                        selectedStatusFilter.toLowerCase()) &&
-                (selectedGenderFilter == 'All' ||
-                    (c.gender ?? '').toLowerCase().startsWith(
-                      selectedGenderFilter.toLowerCase(),
-                    )) &&
-                (selectedExperienceFilter == 'All' ||
-                    (c.experience ?? '').toLowerCase().contains(
-                      selectedExperienceFilter.toLowerCase(),
-                    )) &&
-                (selectedLocationFilter == 'All' ||
-                    (c.location ?? '').toLowerCase().contains(
-                      selectedLocationFilter.toLowerCase().trim(),
-                    )) &&
-                (selectedUploadDateFilter == 'All' ||
-                    (c.uploadDate ?? '').toLowerCase().contains(
-                      selectedUploadDateFilter.toLowerCase(),
-                    )),
-          )
-          .toList();
-      filteredUnlockedCandidates = unlockedCandidates
-          .where(
-            (c) =>
-                (selectedStatusFilter == 'All' ||
-                    (c.status ?? '').toLowerCase() ==
-                        selectedStatusFilter.toLowerCase()) &&
-                (selectedGenderFilter == 'All' ||
-                    (c.gender ?? '').toLowerCase().startsWith(
-                      selectedGenderFilter.toLowerCase(),
-                    )) &&
-                (selectedExperienceFilter == 'All' ||
-                    (c.experience ?? '').toLowerCase().contains(
-                      selectedExperienceFilter.toLowerCase(),
-                    )) &&
-                (selectedLocationFilter == 'All' ||
-                    (c.location ?? '').toLowerCase().contains(
-                      selectedLocationFilter.toLowerCase().trim(),
-                    )) &&
-                (selectedUploadDateFilter == 'All' ||
-                    (c.uploadDate ?? '').toLowerCase().contains(
-                      selectedUploadDateFilter.toLowerCase(),
-                    )),
-          )
-          .toList();
+      // Apply filters to database candidates
+      filteredDatabaseCandidates = databaseCandidates.where((candidate) {
+        // Status filter (includes remarks from statusList)
+        if (!_matchesStatusFilter(candidate)) return false;
+
+        // Gender filter
+        if (selectedGenderFilter != 'All') {
+          final candidateGender = (candidate.gender ?? '').toLowerCase().trim();
+          if (!candidateGender.startsWith(selectedGenderFilter.toLowerCase())) {
+            return false;
+          }
+        }
+
+        // Experience filter
+        if (selectedExperienceFilter != 'All') {
+          final candidateExperience = (candidate.experience ?? '')
+              .toLowerCase()
+              .trim();
+          if (!candidateExperience.contains(
+            selectedExperienceFilter.toLowerCase(),
+          )) {
+            return false;
+          }
+        }
+
+        // Location filter
+        if (selectedLocationFilter != 'All') {
+          final candidateLocation = (candidate.location ?? '')
+              .toLowerCase()
+              .trim();
+          final filterLocation = selectedLocationFilter.toLowerCase().trim();
+          if (!candidateLocation.contains(filterLocation)) {
+            return false;
+          }
+        }
+
+        // Upload date filter
+        if (!_matchesUploadDateFilter(candidate.uploadDate)) return false;
+
+        return true;
+      }).toList();
+
+      // Apply filters to unlocked candidates
+      filteredUnlockedCandidates = unlockedCandidates.where((candidate) {
+        // Status filter (includes remarks from statusList)
+        if (!_matchesStatusFilter(candidate)) return false;
+
+        // Gender filter
+        if (selectedGenderFilter != 'All') {
+          final candidateGender = (candidate.gender ?? '').toLowerCase().trim();
+          if (!candidateGender.startsWith(selectedGenderFilter.toLowerCase())) {
+            return false;
+          }
+        }
+
+        // Experience filter
+        if (selectedExperienceFilter != 'All') {
+          final candidateExperience = (candidate.experience ?? '')
+              .toLowerCase()
+              .trim();
+          if (!candidateExperience.contains(
+            selectedExperienceFilter.toLowerCase(),
+          )) {
+            return false;
+          }
+        }
+
+        // Location filter
+        if (selectedLocationFilter != 'All') {
+          final candidateLocation = (candidate.location ?? '')
+              .toLowerCase()
+              .trim();
+          final filterLocation = selectedLocationFilter.toLowerCase().trim();
+          if (!candidateLocation.contains(filterLocation)) {
+            return false;
+          }
+        }
+
+        // Upload date filter
+        if (!_matchesUploadDateFilter(candidate.uploadDate)) return false;
+
+        return true;
+      }).toList();
+    });
+  }
+
+  bool _matchesStatusFilter(CandidateModelConverter candidate) {
+    if (selectedStatusFilter == 'All') return true;
+
+    // Check main status
+    if ((candidate.status ?? '').toLowerCase() ==
+        selectedStatusFilter.toLowerCase()) {
+      return true;
+    }
+
+    // Check status list for remarks
+    if (candidate.statusList != null) {
+      return candidate.statusList!.any(
+        (status) =>
+            (status.statusName ?? '').toLowerCase() ==
+                selectedStatusFilter.toLowerCase() ||
+            (status.other1 ?? '').toLowerCase().contains(
+              selectedStatusFilter.toLowerCase(),
+            ),
+      );
+    }
+
+    return false;
+  }
+
+  bool _matchesUploadDateFilter(String? uploadDate) {
+    if (selectedUploadDateFilter == 'All' || uploadDate == null) return true;
+
+    try {
+      // Parse the upload date - assuming format is something like "2024-01-15" or similar
+      DateTime candidateDate;
+      if (uploadDate.contains(' ')) {
+        // Handle format like "2024-01-15 10:30:00"
+        candidateDate = DateTime.parse(uploadDate.split(' ')[0]);
+      } else {
+        candidateDate = DateTime.parse(uploadDate);
+      }
+
+      DateTime now = DateTime.now();
+      DateTime today = DateTime(now.year, now.month, now.day);
+
+      switch (selectedUploadDateFilter) {
+        case 'Today':
+          return candidateDate.isAtSameMomentAs(today) ||
+              (candidateDate.year == today.year &&
+                  candidateDate.month == today.month &&
+                  candidateDate.day == today.day);
+
+        case 'This Week':
+          DateTime weekStart = today.subtract(
+            Duration(days: today.weekday - 1),
+          );
+          DateTime weekEnd = weekStart.add(const Duration(days: 6));
+          return candidateDate.isAfter(
+                weekStart.subtract(const Duration(days: 1)),
+              ) &&
+              candidateDate.isBefore(weekEnd.add(const Duration(days: 1)));
+
+        case 'This Month':
+          return candidateDate.year == now.year &&
+              candidateDate.month == now.month;
+
+        default:
+          return uploadDate.toLowerCase().contains(
+            selectedUploadDateFilter.toLowerCase(),
+          );
+      }
+    } catch (e) {
+      // Fallback to string contains if date parsing fails
+      return uploadDate.toLowerCase().contains(
+        selectedUploadDateFilter.toLowerCase(),
+      );
+    }
+  }
+
+  void _clearAllFilters() {
+    setState(() {
+      selectedStatusFilter = 'All';
+      selectedGenderFilter = 'All';
+      selectedExperienceFilter = 'All';
+      selectedLocationFilter = 'All';
+      selectedUploadDateFilter = 'All';
+      _applyFilters();
     });
   }
 
@@ -284,36 +400,6 @@ class _DataVaultPageState extends State<DataVaultPage> {
                     ),
                   ),
                 ),
-                PopupMenuItem<String>(
-                  value: 'google_sheets',
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minWidth: 120,
-                      maxWidth: 180,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.table_chart,
-                          color: isDark ? Colors.white : Colors.black,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Google Sheets',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ],
               onSelected: _handleUploadOption,
               offset: const Offset(0, 40),
@@ -379,6 +465,8 @@ class _DataVaultPageState extends State<DataVaultPage> {
                         _buildFilterOption('By Experience', isDark),
                         _buildFilterOption('By Location', isDark),
                         _buildFilterOption('By Upload Date', isDark),
+                        const Divider(height: 10, thickness: 1),
+                        _buildClearFiltersOption(isDark),
                       ],
                     ),
                   ),
@@ -409,8 +497,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
                       // Fetch fresh data from backend
                       final fetchedCandidates = await CadidateDBService()
                           .getAllLockedCandidates(
-                            userProvider!.id ?? 0,
-                            userProvider!.accessToken.toString() ?? '',
+                            userProvider!.userId.toString(),
                           );
 
                       // Update state
@@ -462,10 +549,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
                     try {
                       // Call your API to fetch all candidates
                       final fetchedCandidates = await CadidateDBService()
-                          .getAllUnlockedCandidates(
-                            userProvider!.id ?? 0,
-                            userProvider!.accessToken.toString() ?? '',
-                          );
+                          .getAllUnlockedCandidates();
 
                       // Update the main list
                       setState(() {
@@ -554,6 +638,32 @@ class _DataVaultPageState extends State<DataVaultPage> {
     );
   }
 
+  Widget _buildClearFiltersOption(bool isDark) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context); // Close the menu
+        _clearAllFilters();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          children: [
+            Icon(Icons.clear_all, color: Colors.red[400], size: 16),
+            const SizedBox(width: 8),
+            Text(
+              'Clear All Filters',
+              style: TextStyle(
+                color: Colors.red[400],
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showFilterDialog(String filterType) {
     Navigator.pop(context);
 
@@ -562,7 +672,18 @@ class _DataVaultPageState extends State<DataVaultPage> {
 
     switch (filterType) {
       case 'By Status':
-        options = ['All', 'Interested', 'RNR', 'Busy', 'Pending'];
+        options = [
+          'All',
+          'Interested',
+          'RNR',
+          'Busy',
+          'Pending',
+          'Not Interested',
+          'Not Suitable',
+          'Wrong Number',
+          'Switched off',
+          'Contact again',
+        ];
         currentValue = selectedStatusFilter;
         break;
       case 'By Gender':
@@ -588,38 +709,92 @@ class _DataVaultPageState extends State<DataVaultPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(filterType),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: options.map((option) {
-              return RadioListTile<String>(
-                title: Text(option),
-                value: option,
-                groupValue: currentValue,
-                onChanged: (value) {
-                  setState(() {
-                    switch (filterType) {
-                      case 'By Status':
-                        selectedStatusFilter = value!;
-                        break;
-                      case 'By Gender':
-                        selectedGenderFilter = value!;
-                        break;
-                      case 'By Experience':
-                        selectedExperienceFilter = value!;
-                        break;
-                      case 'By Location':
-                        selectedLocationFilter = value!;
-                        break;
-                      case 'By Upload Date':
-                        selectedUploadDateFilter = value!;
-                        break;
-                    }
-                  });
-                  Navigator.pop(context);
-                  _applyFilters();
-                },
-              );
-            }).toList(),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Current selection indicator
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Current: $currentValue',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Divider(),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ...options.map((option) {
+                          return RadioListTile<String>(
+                            title: Text(option),
+                            value: option,
+                            groupValue: currentValue,
+                            onChanged: (value) {
+                              setState(() {
+                                switch (filterType) {
+                                  case 'By Status':
+                                    selectedStatusFilter = value!;
+                                    break;
+                                  case 'By Gender':
+                                    selectedGenderFilter = value!;
+                                    break;
+                                  case 'By Experience':
+                                    selectedExperienceFilter = value!;
+                                    break;
+                                  case 'By Location':
+                                    selectedLocationFilter = value!;
+                                    break;
+                                  case 'By Upload Date':
+                                    selectedUploadDateFilter = value!;
+                                    break;
+                                }
+                              });
+                              Navigator.pop(context);
+                              _applyFilters();
+                            },
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+                const Divider(),
+                // Clear button
+                ListTile(
+                  leading: const Icon(Icons.clear_all, color: Colors.red),
+                  title: const Text(
+                    'Clear All Filters',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _clearAllFilters();
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -740,7 +915,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
       await _sendToBackend(
         context,
         candidates,
-        userProvider!.accessToken.toString(),
+        // userProvider!.accessToken.toString(),
       );
     } catch (e, st) {
       debugPrint("❌ Error while uploading CSV: $e\n$st");
@@ -753,9 +928,9 @@ class _DataVaultPageState extends State<DataVaultPage> {
   Future<void> _sendToBackend(
     BuildContext context,
     List<CandidateDB> candidates,
-    String token,
+    // String token,
   ) async {
-    final result = await CadidateDBService.importCandidates(candidates, token);
+    final result = await CadidateDBService.importCandidates(candidates);
 
     if (result['success']) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1021,13 +1196,10 @@ class _DataVaultPageState extends State<DataVaultPage> {
                         statusName: 'WhatsApp',
                         other1: 'Sent WhatsApp message',
                         candidateId: int.parse(candidate.candidateId),
-                        userId: _DataVaultPageState.userProvider?.id ?? 0,
+                        // userId: _DataVaultPageState.userProvider?.userId ?? 0,
                       );
 
-                      await CadidateDBService().addStatus(
-                        status,
-                        _DataVaultPageState.userProvider?.accessToken ?? '',
-                      );
+                      await CadidateDBService().addStatus(status);
 
                       _showWhatsAppDialog(
                         candidate,
@@ -1050,14 +1222,11 @@ class _DataVaultPageState extends State<DataVaultPage> {
                         statusName: 'Phone',
                         other1: 'Called from Phone button',
                         candidateId: int.parse(candidate.candidateId),
-                        userId: _DataVaultPageState.userProvider?.id ?? 0,
+                        // userId: _DataVaultPageState.userProvider?.userId ?? 0,
                       );
 
                       await CadidateDBService().addStatus(
                         status,
-                        _DataVaultPageState.userProvider?.accessToken
-                                .toString() ??
-                            '',
                       ); // No context needed
                       _launchPhone(candidate.phone ?? '');
                     },
@@ -1092,13 +1261,10 @@ class _DataVaultPageState extends State<DataVaultPage> {
                         statusName: 'SMS',
                         other1: 'Sent SMS to candidate',
                         candidateId: int.parse(candidate.candidateId),
-                        userId: _DataVaultPageState.userProvider?.id ?? 0,
+                        // userId: _DataVaultPageState.userProvider!.userId ?? 0,
                       );
 
-                      await CadidateDBService().addStatus(
-                        status,
-                        _DataVaultPageState.userProvider?.accessToken ?? '',
-                      );
+                      await CadidateDBService().addStatus(status);
 
                       _launchSMSWithMessage(
                         phone,
@@ -1122,13 +1288,10 @@ class _DataVaultPageState extends State<DataVaultPage> {
                         statusName: 'Email',
                         other1: 'Sent email to candidate',
                         candidateId: int.parse(candidate.candidateId),
-                        userId: _DataVaultPageState.userProvider?.id ?? 0,
+                        // userId: _DataVaultPageState.userProvider?.userId ?? 0,
                       );
 
-                      await CadidateDBService().addStatus(
-                        status,
-                        _DataVaultPageState.userProvider?.accessToken ?? '',
-                      );
+                      await CadidateDBService().addStatus(status);
 
                       _launchEmailWithMessage(
                         email,
@@ -1420,11 +1583,11 @@ class _DataVaultPageState extends State<DataVaultPage> {
                                       label: 'Phone',
                                       color: const Color(0xFF2196F3),
                                       onTap: () async {
-                                        final token =
-                                            _DataVaultPageState
-                                                .userProvider
-                                                ?.accessToken ??
-                                            '';
+                                        // final token =
+                                        //     _DataVaultPageState
+                                        //         .userProvider
+                                        //         ?.accessToken ??
+                                        '';
                                         final candidateId =
                                             candidate.candidateId;
 
@@ -1432,7 +1595,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
                                             await CadidateDBService()
                                                 .unlockCandidateById(
                                                   candidateId,
-                                                  token,
+                                                  // token,
                                                 );
 
                                         if (success) {
@@ -1932,13 +2095,10 @@ Best regards''';
             statusName: newValue,
             other1: 'Updated via Remarks dropdown',
             candidateId: int.parse(candidate.candidateId),
-            userId: _DataVaultPageState.userProvider?.id ?? 0,
+            // userId: _DataVaultPageState.userProvider.userId
           );
 
-          await CadidateDBService().addStatus(
-            status,
-            _DataVaultPageState.userProvider?.accessToken ?? '',
-          );
+          await CadidateDBService().addStatus(status);
         }
       },
       itemBuilder: (BuildContext context) => [

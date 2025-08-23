@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/go_for_interview_response.dart';
 import '../models/dashboard_model.dart';
 import '../services/host_service.dart';
+import '../services/token_service.dart';
 
 class DashboardService {
   static const String baseUrl = HostService.baseUrl;
@@ -32,9 +33,8 @@ class DashboardService {
   }
 
   // When click on Home page view this will work for Go For Interview
-  static Future<List<GoForInterviewResponse>> fetchGFICandidates(
-    String token,
-  ) async {
+  static Future<List<GoForInterviewResponse>> fetchGFICandidates() async {
+    final token = await TokenService.getValidAccessToken();
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/dashboard/gfi'),
@@ -58,9 +58,9 @@ class DashboardService {
   }
 
   // When click on Home page view this will work for Attendance Marking
-  static Future<List<GoForInterviewResponse>> fetchAttendanceCandidates(
-    String token,
-  ) async {
+  static Future<List<GoForInterviewResponse>>
+  fetchAttendanceCandidates() async {
+    final token = await TokenService.getValidAccessToken();
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/reached-candidates'),
@@ -104,12 +104,13 @@ class DashboardService {
   }
 
   // Fetch users for Set Target functionality
-  Future<List<Map<String, dynamic>>> fetchUsers(String userId) async {
+  Future<List<Map<String, dynamic>>> fetchUsers() async {
+    final token = await TokenService.getValidAccessToken();
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/users/with-target'),
         headers: {
-          'Authorization': 'Bearer $userId',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
@@ -127,10 +128,10 @@ class DashboardService {
 
   // Set target for a user it
   static Future<void> createTarget({
-    required String token,
     required String userId,
     required int newTarget,
   }) async {
+    final token = await TokenService.getValidAccessToken();
     final url = Uri.parse(
       '$baseUrl/targets/current-month?userid=$userId&targetValue=$newTarget',
     );

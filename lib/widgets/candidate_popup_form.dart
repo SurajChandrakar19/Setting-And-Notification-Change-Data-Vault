@@ -3,12 +3,11 @@ import 'package:headsup_ats/models/company_id_name_model.dart';
 import '../utils/app_colors.dart';
 import '../services/and_candidate_service.dart';
 import '../models/candidate_create_model.dart';
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import '../models/create_candidate_response.dart';
 import '../models/create_candidate_with_resume.dart';
+import 'package:flutter/foundation.dart';
 
 class CandidatePopupForm extends StatefulWidget {
   final String initialPhone;
@@ -52,7 +51,7 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
   final _mobileController = TextEditingController();
   final _experienceController = TextEditingController();
   final _emailController = TextEditingController();
-  File? _resumeFile;
+  PlatformFile? _resumeFile;
   UserProvider? userProvider;
 
   // Selection states
@@ -150,18 +149,20 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
 
   void _pickResume() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx'],
+      type: kIsWeb ? FileType.any : FileType.custom,
+      allowedExtensions: kIsWeb ? null : ['pdf', 'doc', 'docx'],
+      withData: true, // Required for Web and recommended for consistency
     );
 
-    if (result != null && result.files.single.path != null) {
+    if (result != null && result.files.isNotEmpty) {
+      final PlatformFile pickedFile = result.files.first;
+
       setState(() {
-        _resumeFile = File(result.files.single.path!);
+        _resumeFile = pickedFile; // PlatformFile, not File
         isResumeUploaded = true;
-        resumeFileName = result.files.single.name;
+        resumeFileName = pickedFile.name;
       });
     } else {
-      // User canceled the picker
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('No resume selected'),
@@ -175,17 +176,11 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
     try {
       // final databaseService = DatabaseService();
       // final loadedLocalities = await databaseService.getLocalities();
-      final loadedLocalities = await AddCandidateService.fetchLocalityNames(
-        userProvider?.accessToken.toString() ?? '',
-      );
+      final loadedLocalities = await AddCandidateService.fetchLocalityNames();
       final loadedJobRoleCategories =
-          await AddCandidateService.fetchjobCategories(
-            userProvider?.accessToken.toString() ?? '',
-          );
+          await AddCandidateService.fetchjobCategories();
       final loadedCompanys =
-          await AddCandidateService.fetchJobIdAndCompanyNames(
-            userProvider?.accessToken.toString() ?? '',
-          );
+          await AddCandidateService.fetchJobIdAndCompanyNames();
       setState(() {
         localities = loadedLocalities;
         jobCategories = loadedJobRoleCategories;
@@ -303,7 +298,7 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
 
       // Proceed with your logic for the selected company
       print("Selected Company: ${selectedCompany.companyName}");
-        } catch (e) {
+    } catch (e) {
       // Log the error if necessary
       print("Error in _onCompanySelected: $e");
     }
@@ -430,7 +425,7 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
         email: candidate.email,
         role: candidate.role,
         interviewTime: candidate.interviewTime,
-        createdByUserId: userProvider?.id ?? 0,
+        // createdByUserId: userProvider!.userId ?? 0,
         companyId: candidate.companyId,
         location: candidate.location,
         qualification: candidate.qualification,
@@ -443,7 +438,6 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
           await AddCandidateService.uploadCandidateWithResume(
             candidate: candidateDTO,
             resumeFile: _resumeFile, // this can be null
-            jwtToken: userProvider?.accessToken.toString() ?? '',
           );
 
       // Show snackbar

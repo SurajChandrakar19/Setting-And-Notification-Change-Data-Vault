@@ -3,8 +3,6 @@ import '../utils/app_colors.dart';
 import '../models/job_model_create.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/jobs_service.dart';
-import '../providers/user_provider.dart';
-import 'package:provider/provider.dart';
 
 // Helper widget for styled text fields in the dialog
 class _StyledTextField extends StatelessWidget {
@@ -68,7 +66,7 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
   bool showFilterMenu = false;
   late List<Job> jobs = [];
   bool isLoading = true;
-  static var userId = "";
+  // static var userId = "";
 
   final List<String> filterOptions = [
     'All',
@@ -93,12 +91,12 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
   @override
   void initState() {
     super.initState();
-    userId =
-        Provider.of<UserProvider>(
-          context,
-          listen: false,
-        ).accessToken?.toString() ??
-        '';
+    // userId =
+    //     Provider.of<UserProvider>(
+    //       context,
+    //       listen: false,
+    //     ).accessToken?.toString() ??
+    //     '';
     loadJobs();
   }
 
@@ -131,7 +129,7 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
               onPressed: () async {
                 try {
                   // final token = await userId; // Load from shared_preferences
-                  await JobService.downloadJobsCSV(userId);
+                  await JobService.downloadJobsCSV();
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -618,7 +616,7 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
                                   );
 
                                   try {
-                                    await JobService.createJob(newJob, userId);
+                                    await JobService.createJob(newJob);
                                     setState(() {
                                       jobs.insert(0, newJob);
                                     });
@@ -762,7 +760,6 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
                                                   if (confirm == true) {
                                                     try {
                                                       await JobService.deleteJob(
-                                                        userId,
                                                         job.id!,
                                                       );
                                                       setState(() {
@@ -831,7 +828,7 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
     });
 
     try {
-      final data = await JobService.fetchJobsByUserId(userId);
+      final data = await JobService.fetchJobsByUserId();
       setState(() {
         jobs = data;
         isLoading = false; // Done loading

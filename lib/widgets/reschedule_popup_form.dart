@@ -83,9 +83,7 @@ class _ReschedulePopupFormState extends State<ReschedulePopupForm> {
   // Fetch companies from the backend
   Future<void> _loadCompanies() async {
     try {
-      final companiesList = await CandidateService.fetchCompanies(
-        widget.userProvider?.accessToken ?? '',
-      );
+      final companiesList = await CandidateService.fetchCompanies();
       setState(() {
         companies = companiesList;
       });
@@ -211,10 +209,9 @@ class _ReschedulePopupFormState extends State<ReschedulePopupForm> {
       interviewTime: formattedDateTime,
     );
 
-    final success = await CandidateService().rescheduleCandidate(
+    final success = await CandidateService.rescheduleCandidate(
       candidateId: int.parse(widget.candidateId ?? '0'),
       dto: dto,
-      accessToken: widget.userProvider?.accessToken ?? '',
     );
 
     if (success) {

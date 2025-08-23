@@ -184,7 +184,7 @@ class CandidateModelConverter {
       gender: json['gender'],
       age: json['age']?.toString(),
       role: json['role'],
-      uploadDate: json['uploadDate'],
+      uploadDate: json['addedDate'],
       phone: json['phone'],
       email: json['email'],
       isUnlocked: json['unlocked'],

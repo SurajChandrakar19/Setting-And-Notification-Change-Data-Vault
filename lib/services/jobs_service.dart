@@ -8,20 +8,19 @@ import 'package:open_filex/open_filex.dart';
 // Remove these if not used:
 import '../models/job_model_create.dart';
 import '../services/host_service.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:universal_html/html.dart' as html;
+import '../services/token_service.dart';
 
 // import 'dart:html' as html;
 
 class JobService {
   static const String baseUrl = HostService.baseUrl; // Update to your serve
 
-  static Future<List<Job>> fetchJobsByUserId(String token) async {
+  static Future<List<Job>> fetchJobsByUserId() async {
     try {
+      final token = await TokenService.getValidAccessToken();
       final response = await http.get(
         Uri.parse('$baseUrl/jobs'),
         headers: {
@@ -43,7 +42,8 @@ class JobService {
     }
   }
 
-  static Future<void> createJob(Job job, String token) async {
+  static Future<void> createJob(Job job) async {
+    final token = await TokenService.getValidAccessToken();
     final response = await http.post(
       Uri.parse('$baseUrl/jobs'),
       headers: {
@@ -68,7 +68,8 @@ class JobService {
     }
   }
 
-  static Future<void> deleteJob(String token, int id) async {
+  static Future<void> deleteJob(int id) async {
+    final token = await TokenService.getValidAccessToken();
     final response = await http.delete(
       Uri.parse('$baseUrl/jobs/$id'),
       headers: {
@@ -206,13 +207,14 @@ class JobService {
   //   }
   // }
 
-  static Future<void> downloadJobsCSV(String jwtToken) async {
+  static Future<void> downloadJobsCSV() async {
+    final token = await TokenService.getValidAccessToken();
     final url = Uri.parse('$baseUrl/jobs/export');
     final fileName = 'jobs_${DateTime.now().millisecondsSinceEpoch}.csv';
 
     final response = await http.get(
       url,
-      headers: {'Authorization': 'Bearer $jwtToken', 'Accept': 'text/csv'},
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'text/csv'},
     );
 
     if (response.statusCode != 200) {

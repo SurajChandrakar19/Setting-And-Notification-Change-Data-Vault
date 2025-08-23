@@ -5,7 +5,6 @@ import 'dashboard_shell_screen.dart';
 import '../services/auth_service.dart';
 import '../providers/user_provider.dart';
 import 'package:provider/provider.dart';
-import '../utils/token_storage.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _adminEmailController = TextEditingController();
   final TextEditingController _adminPasswordController =
       TextEditingController();
+  bool _isPasswordVisible = false;
 
   @override
   void dispose() {
@@ -29,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // bool _isPasswordVisible = false;
     return Scaffold(
       backgroundColor: backgroundWhite,
       body: SafeArea(
@@ -241,14 +242,29 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Password field
                 TextField(
                   controller: _adminPasswordController,
+                  obscureText:
+                      !_isPasswordVisible, // This controls the visibility
                   decoration: InputDecoration(
                     labelText: 'Admin Password',
                     prefixIcon: const Icon(Icons.lock, color: primaryBlue),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible =
+                              !_isPasswordVisible; // Toggle visibility
+                        });
+                      },
+                    ),
                   ),
-                  obscureText: true,
                 ),
                 const SizedBox(height: 32),
                 // Admin login button
@@ -294,12 +310,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           context,
                           listen: false,
                         );
-                        userProvider.setUser(
-                          id: data.id,
+                        await userProvider.setUser(
+                          userId: data.id.toString(),
                           email: data.email,
                           name: data.name,
+                          role: data.admin ? "admin" : "user",
                           accessToken: data.accessToken,
                           refreshToken: data.refreshToken,
+                          tokenType: "Bearer",
                           admin: data.admin,
                         );
 
@@ -309,6 +327,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             builder: (context) =>
                                 const DashboardShellScreen(isAdmin: true),
                           ),
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Login successful")),
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -402,18 +423,15 @@ class _LoginScreenState extends State<LoginScreen> {
         name: googleUser.displayName ?? '',
       );
 
-      // 🔐 Store tokens securely if needed
-      await TokenStorage.storeTokens(oauth2Response);
-
-      // 👥 Update Provider
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      userProvider.setUser(
-        id: oauth2Response['userId'],
+      await userProvider.setUser(
+        userId: oauth2Response['userId'].toString(),
         email: oauth2Response['email'],
         name: oauth2Response['name'],
+        role: (oauth2Response['admin'] ?? false) ? "admin" : "user",
         accessToken: oauth2Response['accessToken'],
         refreshToken: oauth2Response['refreshToken'],
-        admin: oauth2Response['admin'] ?? false,
+        tokenType: oauth2Response['tokenType'] ?? "Bearer",
       );
 
       //       if (oauth2Response['admin'] == true) {
@@ -436,6 +454,9 @@ class _LoginScreenState extends State<LoginScreen> {
               const DashboardShellScreen(), // You can use admin check here if needed
         ),
       );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Login successful")));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

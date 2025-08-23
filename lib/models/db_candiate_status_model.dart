@@ -17,18 +17,17 @@ class StatusDTO {
   }
 }
 
-
 class DBStatusDTO {
   final String statusName;
   final String other1;
   final int candidateId;
-  final int userId;
+  // final int userId;
 
   DBStatusDTO({
     required this.statusName,
     required this.other1,
     required this.candidateId,
-    required this.userId,
+    // required this.userId,
   });
 
   Map<String, dynamic> toJson() {
@@ -36,7 +35,7 @@ class DBStatusDTO {
       'statusName': statusName,
       'other1': other1,
       'candidateId': candidateId,
-      'userId': userId,
+      // 'userId': userId,
     };
   }
 }

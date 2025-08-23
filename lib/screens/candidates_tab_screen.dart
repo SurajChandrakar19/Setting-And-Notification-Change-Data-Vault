@@ -13,6 +13,7 @@ import '../services/candidate_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../services/resume_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CandidatesTabScreen extends StatefulWidget {
   final VoidCallback onBackToHome;
@@ -67,7 +68,7 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
     // get data from api
     // fetchCandidates();
     userProvider = Provider.of<UserProvider>(context, listen: false);
-    userId = userProvider?.id?.toString() ?? '';
+    // userId = userProvider?.id?.toString() ?? '';
 
     // userId =
     //     Provider.of<UserProvider>(
@@ -128,429 +129,17 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          backgroundColor: Theme.of(context).cardColor,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9,
-            padding: const EdgeInsets.all(24),
-            color: Theme.of(context).cardColor,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header with name and 3-dot menu
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            (candidate['name'] ?? '').toString(),
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'ID: ${(candidate['id'] ?? '').toString()}',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            (candidate['role'] ?? '').toString(),
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, color: textSecondary),
-                      onSelected: (String value) {
-                        if (value == 'remove') {
-                          final allIndex = allCandidates.indexOf(candidate);
-                          _removeCandidate(allIndex);
-                        }
-                      },
-                      itemBuilder: (BuildContext context) => [
-                        if (widget.isAdmin)
-                          const PopupMenuItem<String>(
-                            value: 'remove',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red,
-                                  size: 20,
-                                ),
-                                SizedBox(width: 8),
-                                Text('Remove Candidate'),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // Rating and View Resume
-                Row(
-                  children: [
-                    // Rating stars (interactive)
-                    StatefulBuilder(
-                      builder: (context, setStateDialog) {
-                        return Row(
-                          children: [
-                            Text(
-                              (candidate['rating'] ?? '').toString(),
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(width: 8),
-                            Row(
-                              children: List.generate(5, (starIndex) {
-                                if (widget.isAdmin) {
-                                  return GestureDetector(
-                                    onTap: () {
-                                      setStateDialog(() {
-                                        candidate['rating'] = starIndex + 1.0;
-                                      });
-                                      setState(() {
-                                        allCandidates[index]['rating'] =
-                                            starIndex + 1.0;
-                                        _filterCandidates(_searchQuery);
-                                      });
-                                      // Reopen the dialog to reflect the new rating
-                                      // Future.delayed(
-                                      //   const Duration(milliseconds: 200),
-                                      //   () {
-                                      //     _showCandidateDetails(
-                                      //       allCandidates[index],
-                                      //       index,
-                                      //     );
-                                      //   },
-                                      // );
-                                    },
-                                    child: Icon(
-                                      starIndex <
-                                              (candidate['rating'] ?? 0).floor()
-                                          ? Icons.star
-                                          : Icons.star_border,
-                                      color: Colors.amber,
-                                      size: 24,
-                                    ),
-                                  );
-                                } else {
-                                  return Icon(
-                                    starIndex <
-                                            (candidate['rating'] ?? 0).floor()
-                                        ? Icons.star
-                                        : Icons.star_border,
-                                    color: Colors.amber,
-                                    size: 24,
-                                  ); //Icon
-                                }
-                              }), //List.generate
-                            ), //Row
-                          ],
-                        ); //Row
-                      },
-                    ),
-                    // StatefulBuilder
-                    const Spacer(),
-                    // View Resume button
-                    ElevatedButton(
-                      onPressed: () async {
-                        try {
-                          await ResumeService.downloadAndOpenResume(
-                            candidateId: int.parse(candidate['id'].toString()),
-                            token: userProvider?.accessToken ?? '',
-                          );
-                          print('Resume downloaded successfully.');
-                        } catch (e) {
-                          print('Error downloading resume: $e');
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Failed to download resume'),
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE3F2FD),
-                        foregroundColor: primaryBlue,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: Text(
-                        'View Resume',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Theme.of(context).colorScheme.primary
-                              : primaryBlue,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                // Details grid
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildPopupDetailItem(
-                        'Job Title',
-                        (candidate['role'] ?? '').toString(),
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildPopupDetailItem(
-                        'Experience',
-                        (candidate['experience'] ?? '').toString(),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildPopupDetailItem(
-                        'Name',
-                        (candidate['name'] ?? '').toString(),
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildPopupDetailItem(
-                        'Age',
-                        (candidate['age'] ?? '').toString(),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildPopupDetailItem(
-                        'Location',
-                        (candidate['location'] ?? '').toString(),
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildPopupDetailItem(
-                        'Qualification',
-                        (candidate['qualification'] ?? '').toString(),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                // Notes section (editable)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Notes',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                StatefulBuilder(
-                  builder: (context, setStateDialog) {
-                    final TextEditingController notesController =
-                        TextEditingController(text: candidate['notes'] ?? '');
-                    bool showSuccess = false;
-                    return StatefulBuilder(
-                      builder: (context, setStateLocal) {
-                        return Column(
-                          children: [
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Theme.of(
-                                        context,
-                                      ).colorScheme.surface.withOpacity(0.7)
-                                    : const Color(0xFFF5F5F5),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Theme.of(context).dividerColor,
-                                ), // BoxDecoration border OK
-                              ),
-                              child: TextField(
-                                controller: notesController,
-                                maxLines: 4,
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
-                                  hintText: 'Write notes here...',
-                                ),
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(fontSize: 14, height: 1.4),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ElevatedButton(
-                                // onPressed: () {
-                                //   setStateDialog(() {
-                                //     allCandidates[index]['notes'] =
-                                //         notesController.text;
-                                //   });
-                                //   setState(() {
-                                //     allCandidates[index]['notes'] =
-                                //         notesController.text;
-                                //     _filterCandidates(_searchQuery);
-                                //   });
-                                //   Navigator.of(context).pop();
-                                //   Future.delayed(Duration.zero, () {
-                                //     ScaffoldMessenger.of(
-                                //       this.context,
-                                //     ).showSnackBar(
-                                //       const SnackBar(
-                                //         content: Text(
-                                //           'Notes saved successfully',
-                                //         ),
-                                //         backgroundColor: Colors.green,
-                                //         duration: Duration(seconds: 2),
-                                //       ),
-                                //     );
-                                //   });
-                                // },
-                                onPressed: () async {
-                                  final String note = notesController.text;
-                                  final int candidateId =
-                                      allCandidates[index]['id'];
-                                  final int rating =
-                                      candidate['rating']; // Replace with your rating variable
-                                  final String token =
-                                      userProvider?.accessToken ??
-                                      ''; // or pass it however you store it
-
-                                  try {
-                                    // Call the backend API
-                                    await CandidateService.updateCandidateRating(
-                                      candidateId,
-                                      rating,
-                                      note,
-                                      token,
-                                    );
-
-                                    // Update UI in dialog
-                                    setStateDialog(() {
-                                      allCandidates[index]['notes'] = note;
-                                    });
-
-                                    // Update main screen
-                                    setState(() {
-                                      allCandidates[index]['notes'] = note;
-                                      _filterCandidates(_searchQuery);
-                                    });
-
-                                    // Close dialog
-                                    Navigator.of(context).pop();
-
-                                    // Show success snackbar
-                                    Future.delayed(Duration.zero, () {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Notes saved successfully',
-                                          ),
-                                          backgroundColor: Colors.green,
-                                          duration: Duration(seconds: 2),
-                                        ),
-                                      );
-                                    });
-                                  } catch (e) {
-                                    // Show error snackbar
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Failed to update rating: ${e.toString()}',
-                                        ),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                },
-
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryBlue,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Save Notes',
-                                  style: Theme.of(context).textTheme.bodyLarge,
-                                ), //Text
-                              ), //ElevatedButton
-                            ), //Container
-                          ],
-                        ); //Column
-                      }, //StatefulBuilder
-                    ); //StatefulBuilder
-                  }, //StatefulBuilder
-                ),
-
-                const SizedBox(height: 24),
-                // Action buttons: Only Reschedule for user
-                const SizedBox(height: 24),
-                // Close button
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: Text(
-                      'Close',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontSize: 16,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        return _CandidateDetailsDialog(
+          candidate: candidate,
+          index: index,
+          isAdmin: widget.isAdmin,
+          userProvider: userProvider,
+          allCandidates: allCandidates,
+          onRemoveCandidate: _removeCandidate,
+          onFilterCandidates: _filterCandidates,
+          searchQuery: _searchQuery,
+          buildPopupDetailItem: _buildPopupDetailItem,
+          setState: setState,
         );
       },
     );
@@ -602,7 +191,6 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
                 try {
                   await CandidateService.deactivateCandidate(
                     removedCandidate['id'],
-                    userProvider?.accessToken ?? '',
                   );
 
                   setState(() {
@@ -992,7 +580,6 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
                       allCandidates[index]['id'].toString(),
                     ),
                     status: 'PENDING',
-                    token: userProvider?.accessToken ?? '',
                   );
                   if (success) {
                     _notificationService.addNotification(
@@ -1454,6 +1041,14 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
                   ),
                 ),
                 IconButton(
+                  onPressed: () {
+                    _makePhoneCall(candidate['phone'].toString());
+                  },
+                  icon: const Icon(Icons.call_outlined, color: Colors.green),
+                  tooltip: 'Call Candidate',
+                ),
+
+                IconButton(
                   onPressed: () => _editCandidate(index),
                   icon: Icon(
                     Icons.edit_outlined,
@@ -1548,6 +1143,16 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
                       _buildDetailRow(
                         Icons.calendar_today_outlined,
                         'Added: ${(candidate['addedDate'] ?? '').toString()}',
+                      ),
+                      SizedBox(height: 8),
+                      _buildDetailRow(
+                        Icons.person_add,
+                        ' ${(candidate['userName'] ?? '').toString()}',
+                      ),
+                      SizedBox(height: 8),
+                      _buildDetailRow(
+                        Icons.business_sharp,
+                        ' ${(candidate['companyName'] ?? '').toString()}',
                       ),
                     ],
                   ),
@@ -1850,6 +1455,20 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
     );
   }
 
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not launch dialer for $phoneNumber'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   Widget _buildDetailRow(IconData icon, String text) {
     return Row(
       children: [
@@ -1951,9 +1570,7 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
   // get dta from service and load on allCandidates
   Future<void> loadCandidates() async {
     try {
-      final candidates = await CandidateService.fetchCandidates(
-        userProvider?.accessToken ?? '',
-      );
+      final candidates = await CandidateService.fetchCandidates();
       setState(() {
         allCandidates = candidates;
       });
@@ -1964,14 +1581,459 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
 
   Future<bool> goForInterviewSubmit(String clientId) async {
     try {
-      final gfiCheck = await CandidateService.goForInterview(
-        clientId,
-        userProvider?.accessToken ?? '',
-      );
+      final gfiCheck = await CandidateService.goForInterview(clientId);
       return gfiCheck;
     } catch (e) {
       print('Erro go for interview');
       return false;
     }
+  }
+}
+
+class _CandidateDetailsDialog extends StatefulWidget {
+  final Map<String, dynamic> candidate;
+  final int index;
+  final bool isAdmin;
+  final UserProvider? userProvider;
+  final List<Map<String, dynamic>> allCandidates;
+  final void Function(int) onRemoveCandidate;
+  final void Function(String) onFilterCandidates;
+  final String searchQuery;
+  final Widget Function(String, String) buildPopupDetailItem;
+  final void Function(void Function()) setState;
+
+  const _CandidateDetailsDialog({
+    required this.candidate,
+    required this.index,
+    required this.isAdmin,
+    required this.userProvider,
+    required this.allCandidates,
+    required this.onRemoveCandidate,
+    required this.onFilterCandidates,
+    required this.searchQuery,
+    required this.buildPopupDetailItem,
+    required this.setState,
+  });
+
+  @override
+  _CandidateDetailsDialogState createState() => _CandidateDetailsDialogState();
+}
+
+class _CandidateDetailsDialogState extends State<_CandidateDetailsDialog> {
+  late final TextEditingController notesController;
+  late final ScrollController scrollController;
+  late final FocusNode notesFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    notesController = TextEditingController(
+      text: widget.candidate['notes'] ?? '',
+    );
+    scrollController = ScrollController();
+    notesFocusNode = FocusNode();
+    notesFocusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    notesController.dispose();
+    scrollController.dispose();
+    notesFocusNode.removeListener(_onFocusChange);
+    notesFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (notesFocusNode.hasFocus) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        scrollController.animateTo(
+          scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: Theme.of(context).cardColor,
+      child: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          color: Theme.of(context).cardColor,
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header with name and 3-dot menu
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (widget.candidate['name'] ?? '').toString(),
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'ID: ${(widget.candidate['id'] ?? '').toString()}',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              (widget.candidate['role'] ?? '').toString(),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, color: textSecondary),
+                        onSelected: (String value) {
+                          if (value == 'remove') {
+                            final allIndex = widget.allCandidates.indexOf(
+                              widget.candidate,
+                            );
+                            widget.onRemoveCandidate(allIndex);
+                          }
+                        },
+                        itemBuilder: (BuildContext context) => [
+                          if (widget.isAdmin)
+                            const PopupMenuItem<String>(
+                              value: 'remove',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text('Remove Candidate'),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Rating and View Resume
+                  Row(
+                    children: [
+                      // Rating stars (interactive)
+                      StatefulBuilder(
+                        builder: (context, setStateDialog) {
+                          return Row(
+                            children: [
+                              Text(
+                                (widget.candidate['rating'] ?? '').toString(),
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              const SizedBox(width: 8),
+                              Row(
+                                children: List.generate(5, (starIndex) {
+                                  if (widget.isAdmin) {
+                                    return GestureDetector(
+                                      onTap: () {
+                                        setStateDialog(() {
+                                          widget.candidate['rating'] =
+                                              starIndex + 1.0;
+                                        });
+                                        widget.setState(() {
+                                          widget.allCandidates[widget
+                                                  .index]['rating'] =
+                                              starIndex + 1.0;
+                                          widget.onFilterCandidates(
+                                            widget.searchQuery,
+                                          );
+                                        });
+                                      },
+                                      child: Icon(
+                                        starIndex <
+                                                (widget.candidate['rating'] ??
+                                                        0)
+                                                    .floor()
+                                            ? Icons.star
+                                            : Icons.star_border,
+                                        color: Colors.amber,
+                                        size: 24,
+                                      ),
+                                    );
+                                  } else {
+                                    return Icon(
+                                      starIndex <
+                                              (widget.candidate['rating'] ?? 0)
+                                                  .floor()
+                                          ? Icons.star
+                                          : Icons.star_border,
+                                      color: Colors.amber,
+                                      size: 24,
+                                    ); //Icon
+                                  }
+                                }), //List.generate
+                              ), //Row
+                            ],
+                          ); //Row
+                        },
+                      ),
+                      // StatefulBuilder
+                      const Spacer(),
+                      // View Resume button
+                      ElevatedButton(
+                        onPressed: () async {
+                          try {
+                            await ResumeService.downloadAndOpenResume(
+                              int.parse(widget.candidate['id'].toString()),
+                            );
+                            print('Resume downloaded successfully.');
+                          } catch (e) {
+                            print('Error downloading resume: $e');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to download resume'),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE3F2FD),
+                          foregroundColor: primaryBlue,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: Text(
+                          'View Resume',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Theme.of(context).colorScheme.primary
+                                    : primaryBlue,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  // Details grid
+                  Row(
+                    children: [
+                      Expanded(
+                        child: widget.buildPopupDetailItem(
+                          'Job Title',
+                          (widget.candidate['role'] ?? '').toString(),
+                        ),
+                      ),
+                      Expanded(
+                        child: widget.buildPopupDetailItem(
+                          'Experience',
+                          (widget.candidate['experience'] ?? '').toString(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: widget.buildPopupDetailItem(
+                          'Name',
+                          (widget.candidate['name'] ?? '').toString(),
+                        ),
+                      ),
+                      Expanded(
+                        child: widget.buildPopupDetailItem(
+                          'Age',
+                          (widget.candidate['age'] ?? '').toString(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: widget.buildPopupDetailItem(
+                          'Location',
+                          (widget.candidate['location'] ?? '').toString(),
+                        ),
+                      ),
+                      Expanded(
+                        child: widget.buildPopupDetailItem(
+                          'Qualification',
+                          (widget.candidate['qualification'] ?? '').toString(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  // Notes section (editable)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Notes',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.surface.withOpacity(0.7)
+                          : const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context).dividerColor,
+                      ), // BoxDecoration border OK
+                    ),
+                    child: TextField(
+                      controller: notesController,
+                      focusNode: notesFocusNode,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        hintText: 'Write notes here...',
+                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final String note = notesController.text;
+                        final int candidateId =
+                            widget.allCandidates[widget.index]['id'];
+                        final int rating = widget.candidate['rating'] ?? 0;
+
+                        try {
+                          await CandidateService.updateCandidateRating(
+                            candidateId: candidateId,
+                            rating: rating,
+                            note: note,
+                          );
+
+                          widget.setState(() {
+                            widget.allCandidates[widget.index]['notes'] = note;
+                            widget.onFilterCandidates(widget.searchQuery);
+                          });
+
+                          Navigator.of(context).pop();
+
+                          Future.delayed(Duration.zero, () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Notes saved successfully'),
+                                backgroundColor: Colors.green,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          });
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Failed to update rating: ${e.toString()}',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Save Notes',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+                  // Action buttons: Only Reschedule for user
+                  const SizedBox(height: 24),
+                  // Close button
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        'Close',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontSize: 16,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

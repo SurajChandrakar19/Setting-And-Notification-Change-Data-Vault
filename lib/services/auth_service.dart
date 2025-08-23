@@ -4,52 +4,54 @@ import 'package:http/http.dart' as http;
 import '../models/user_login_response.dart'; // adjust path as needed
 import 'package:google_sign_in/google_sign_in.dart';
 import '../services/host_service.dart';
+import '../providers/user_provider.dart';
+import '../utils/token_storage.dart';
 
-class AuthService {
-  static const String baseUrl = HostService.baseUrlAuth;
+// class AuthService {
+//   static const String baseUrl = HostService.baseUrlAuth;
 
-  Future<UserLoginResponse?> login(String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      );
+//   Future<UserLoginResponse?> login(String email, String password) async {
+//     try {
+//       final response = await http.post(
+//         Uri.parse('$baseUrl/login'),
+//         headers: {'Content-Type': 'application/json'},
+//         body: jsonEncode({'email': email, 'password': password}),
+//       );
 
-      if (response.statusCode == 200) {
-        final jsonBody = jsonDecode(response.body);
-        return UserLoginResponse.fromJson(jsonBody);
-      } else {
-        return null;
-      }
-    } catch (e) {
-      print('Login error: $e');
-      return null;
-    }
-  }
+//       if (response.statusCode == 200) {
+//         final jsonBody = jsonDecode(response.body);
+//         return UserLoginResponse.fromJson(jsonBody);
+//       } else {
+//         return null;
+//       }
+//     } catch (e) {
+//       print('Login error: $e');
+//       return null;
+//     }
+//   }
 
-  static Future<bool> logout(String? accessToken) async {
-    if (accessToken == null) return false;
+//   static Future<bool> logout(String? accessToken) async {
+//     if (accessToken == null) return false;
 
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/logout'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
-        },
-      );
+//     try {
+//       final response = await http.post(
+//         Uri.parse('$baseUrl/logout'),
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'Authorization': 'Bearer $accessToken',
+//         },
+//       );
 
-      return response.statusCode == 200;
-    } catch (e) {
-      debugPrint('Logout error: $e');
-      return false;
-    }
-  }
-}
+//       return response.statusCode == 200;
+//     } catch (e) {
+//       debugPrint('Logout error: $e');
+//       return false;
+//     }
+//   }
+// }
 
 class OAuth2Service {
-  static const String _baseUrl = 'http://localhost:8080/v1/oauth2';
+  static const String _baseUrl = HostService.baseUrl;
 
   static Future<Map<String, dynamic>> oauth2Login({
     required String provider,
@@ -58,7 +60,7 @@ class OAuth2Service {
     required String name,
   }) async {
     final response = await http.post(
-      Uri.parse('$_baseUrl/login'),
+      Uri.parse('$_baseUrl/oauth2/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'provider': provider,
@@ -93,5 +95,60 @@ class GoogleAuthService {
 
   Future<void> signOut() async {
     await _googleSignIn.signOut();
+  }
+}
+
+class AuthService {
+  static const String baseUrl = HostService.baseUrlAuth;
+
+  Future<UserLoginResponse?> login(String email, String password) async {
+    // your existing login
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonBody = jsonDecode(response.body);
+        return UserLoginResponse.fromJson(jsonBody);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Login error: $e');
+      return null;
+    }
+  }
+
+  /// Logout user → revoke backend session + clear local tokens
+  static Future<bool> handleLogout(UserProvider userProvider) async {
+    try {
+      final accessToken = (await TokenStorage.getTokens())['accessToken'];
+
+      if (accessToken != null && accessToken.isNotEmpty) {
+        final response = await http.post(
+          Uri.parse('$baseUrl/logout'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $accessToken',
+          },
+        );
+
+        // ignore backend failure → still clear locally
+        if (response.statusCode != 200) {
+          debugPrint("Server logout failed, clearing local session anyway");
+        }
+      }
+
+      // ✅ Always clear local session
+      await userProvider.clearUser();
+
+      return true;
+    } catch (e) {
+      debugPrint('Logout error: $e');
+      return false;
+    }
   }
 }

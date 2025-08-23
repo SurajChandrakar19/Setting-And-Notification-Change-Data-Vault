@@ -6,6 +6,7 @@ import 'host_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/db_candidate_model.dart';
+import '../services/token_service.dart';
 
 class CadidateDBService {
   static const String baseUrl = HostService.baseUrl;
@@ -33,8 +34,8 @@ class CadidateDBService {
 
   static Future<Map<String, dynamic>> importCandidates(
     List<CandidateDB> candidates,
-    String token,
   ) async {
+    final token = await TokenService.getValidAccessToken();
     final url = Uri.parse("$baseUrl/candidate-db/import");
 
     try {
@@ -88,13 +89,12 @@ class CadidateDBService {
   }
 
   Future<List<CandidateModelConverter>> getAllUnlockedCandidates(
-    int userId,
-    String accessToken,
   ) async {
+    final token = await TokenService.getValidAccessToken();
     final response = await http.get(
       Uri.parse('$baseUrl/candidate-db/unlocked'),
       headers: {
-        'Authorization': 'Bearer $accessToken',
+        'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
     );
@@ -110,13 +110,13 @@ class CadidateDBService {
   }
 
   Future<List<CandidateModelConverter>> getAllLockedCandidates(
-    int userId,
-    String accessToken,
+    String userId,
   ) async {
+    final token = await TokenService.getValidAccessToken();
     final response = await http.get(
       Uri.parse('$baseUrl/candidate-db/locked'),
       headers: {
-        'Authorization': 'Bearer $accessToken',
+        'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
     );
@@ -131,8 +131,9 @@ class CadidateDBService {
     }
   }
 
-  Future<void> addStatus(DBStatusDTO status, String token) async {
+  Future<void> addStatus(DBStatusDTO status) async {
     try {
+      final token = await TokenService.getValidAccessToken();
       final response = await http.put(
         Uri.parse('$baseUrl/status'),
         headers: {
@@ -150,8 +151,9 @@ class CadidateDBService {
     }
   }
 
-  Future<bool> unlockCandidateById(String id, String token) async {
+  Future<bool> unlockCandidateById(String id) async {
     try {
+      final token = await TokenService.getValidAccessToken();
       final response = await http.put(
         Uri.parse('$baseUrl/candidate-db/unlock/$id'),
         headers: {

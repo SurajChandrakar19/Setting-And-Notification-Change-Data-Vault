@@ -43,7 +43,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
       return applications;
     }
     return applications.where((app) {
-      return (app['callStatus'] ?? '').toString().toLowerCase() ==
+      return (app['trackerStatus'] ?? '').toString().toLowerCase() ==
           selectedFilter.toLowerCase();
     }).toList();
   }
@@ -57,8 +57,9 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
     super.initState();
     userProvider = Provider.of<UserProvider>(context, listen: false);
 
-    userId = userProvider?.accessToken.toString() ?? '';
+    // userId = userProvider?.accessToken.toString() ?? '';
     // Load applications data
+    // userId = Provider.of<UserProvider>(context, listen: false).userId;
     _loadApplication();
   }
 
@@ -89,15 +90,14 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
           actions: [
             IconButton(
               icon: Icon(Icons.download),
-              tooltip: 'Download CSV',
               onPressed: () async {
                 try {
-                  // await ReachedCandidateService.downloadReachedCandidatesCSV(
-                  //   userId,
-                  // );
+                  // final token = await userId; // Load from shared_preferences
+                  await ReachedCandidateService.downloadJobsCSV();
+
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('CSV downloaded successfully.'),
+                    SnackBar(
+                      content: Text('CSV downloaded & opened'),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -313,7 +313,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: getStatusColor(
-              (application['callStatus'] ?? '')
+              (application['trackerStatus'] ?? '')
                   .toString()
                   .toLowerCase()
                   .replaceFirstMapped(
@@ -388,6 +388,13 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
                               context,
                             ).textTheme.bodyMedium?.copyWith(fontSize: 12),
                           ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${application['userName'] ?? ''}',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(fontSize: 14),
+                          ),
                         ],
                       ),
                     ),
@@ -432,7 +439,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: getStatusColor(
-                        (application['callStatus'] ?? '')
+                        (application['trackerStatus'] ?? '')
                             .toString()
                             .toLowerCase()
                             .replaceFirstMapped(
@@ -444,7 +451,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
                     ),
                   ),
                   child: Text(
-                    (application['callStatus'] ?? '')
+                    (application['trackerStatus'] ?? '')
                         .toString()
                         .toLowerCase()
                         .replaceFirstMapped(
@@ -455,7 +462,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: getStatusColor(
-                        (application['callStatus'] ?? '')
+                        (application['trackerStatus'] ?? '')
                             .toString()
                             .toLowerCase()
                             .replaceFirstMapped(
@@ -729,10 +736,8 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
     try {
       final bool success = await CandidateTrackService.updateStatus(
         candidateId: application['candidateId'].toInt(),
-        userId: userProvider?.id ?? 0,
+        userId: userProvider!.userId.toString(),
         status: newStatus,
-        accessToken:
-            userProvider?.accessToken ?? '', // Ensure token is available
       );
 
       if (!mounted) return;
@@ -773,7 +778,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
   Future<void> _loadApplication() async {
     try {
       final reachedCandidate =
-          await ReachedCandidateService.fetchReachedCandidates(userId);
+          await ReachedCandidateService.fetchReachedCandidates();
       setState(() {
         applications = reachedCandidate;
       });

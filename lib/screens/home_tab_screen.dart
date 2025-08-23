@@ -12,7 +12,6 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../models/go_for_interview_response.dart';
 import '../services/dashboad_service.dart';
-import '../models/dashboard_model.dart';
 import '../models/dashbord_summary_model.dart';
 import '../services/dashbord_service.dart';
 import '../services/and_candidate_service.dart';
@@ -60,7 +59,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
   void initState() {
     super.initState();
     userProvider = Provider.of<UserProvider>(context, listen: false);
-    userId = userProvider?.id?.toString() ?? '';
+    userId = userProvider?.userId?.toString() ?? '';
 
     // loadGFICount();
     // _loadGFICandidates();
@@ -103,10 +102,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
     }
 
     try {
-      bool isTaken = await AddCandidateService.isPhoneNumberTaken(
-        phone,
-        userProvider?.accessToken ?? '',
-      );
+      bool isTaken = await AddCandidateService.isPhoneNumberTaken(phone);
       if (isTaken) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -198,7 +194,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
   void _navigateToSetTarget() async {
     // Fetch candidates from the service
     await DashboardService()
-        .fetchUsers(userProvider?.accessToken ?? '')
+        .fetchUsers()
         .then((candidates) {
           setState(() {
             this.candidates = candidates;
@@ -231,9 +227,11 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
   @override
   Widget build(BuildContext context) {
     final currentData = performanceData[selectedPeriod]!;
-    final currentUserRole = Provider.of<UserProvider>(context).admin ?? false
-        ? 'admin'
-        : 'user';
+    // final currentUserRole = userProvider!.admin ?? false ? 'admin' : 'user';
+    final currentUserRole = userProvider!.role == 'admin' ? 'admin' : 'user';
+    // final currentUserRole = Provider.of<UserProvider>(context).admin ?? false
+    //     ? 'admin'
+    //     : 'user';
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
@@ -255,11 +253,17 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                         backgroundColor: Theme.of(
                           context,
                         ).colorScheme.primary.withOpacity(0.1),
-                        child: Icon(
-                          Icons.person,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 24,
-                        ),
+                        backgroundImage:
+                            (userProvider!.profilePic != null &&
+                                userProvider!.profilePic!.isNotEmpty)
+                            ? NetworkImage(userProvider!.profilePic!)
+                            : const AssetImage('assets/images/PocketCTS.png')
+                                  as ImageProvider,
+                        child:
+                            (userProvider!.profilePic == null ||
+                                userProvider!.profilePic!.isEmpty)
+                            ? null // asset already shows, no icon needed
+                            : null,
                       ),
                       const SizedBox(width: 8), // space between icon and name
                       Consumer<UserProvider>(
@@ -453,6 +457,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                                 child: _buildTargetItem(
                                   context,
                                   'Target Interview Scheduled',
+                                  // '${dashboardSummary?.todayTotalGoForInterviewCount.toString() ?? '0'}/${dashboardSummary?.nextMonth.totalTarget.toString() ?? '0'}',
                                   '${dashboardSummary?.nextMonth.totalAchieved.toString() ?? '0'}/${dashboardSummary?.nextMonth.totalTarget.toString() ?? '0'}',
                                   Colors.green,
                                 ),
@@ -855,8 +860,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.nextMonth.totalTarget
-                                  .toString() ??
+                          (dashboardSummary?.nextMonth.totalTarget.toString() ??
                               '0'),
                           style: TextStyle(
                             color: Colors.white,
@@ -885,7 +889,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       ),
                       child: const Center(
                         child: Text(
-                          'Closers',
+                          'Closures',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -1349,34 +1353,27 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    final accessToken = userProvider?.accessToken;
-
-                    // Call logout service method
-                    final success = await AuthService.logout(accessToken);
-
-                    // Clear user data from provider
-                    userProvider?.logout();
+                    final success = await AuthService.handleLogout(
+                      userProvider!,
+                    );
 
                     if (!context.mounted) return;
 
-                    // Show feedback
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          success
-                              ? 'Logout successful'
-                              : 'Logout failed or network issue',
+                          success ? 'Logout successful' : 'Logout failed',
                         ),
                       ),
                     );
 
-                    // Navigate to OnboardingScreen and clear previous routes
+                    // Navigate to onboarding (clear routes)
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const OnboardingScreen(),
+                        builder: (_) => const OnboardingScreen(),
                       ),
-                      (route) => false, // Remove all previous routes
+                      (route) => false,
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -1501,9 +1498,8 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
   // API connection for load all candidate on map fir GFi
   Future<void> _loadGFICandidates() async {
     try {
-      final data = await DashboardService.fetchGFICandidates(
-        userProvider?.accessToken.toString() ?? '',
-      ); // replace 1 with dynamic userId if needed
+      final data =
+          await DashboardService.fetchGFICandidates(); // replace 1 with dynamic userId if needed
       setState(() {
         gfiCandidates = data;
       });
@@ -1528,9 +1524,8 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
   // API connection for load all candidate on map for Attendance Marking
   Future<void> _loadAttendanceMarking() async {
     try {
-      final data = await DashboardService.fetchAttendanceCandidates(
-        userProvider?.accessToken.toString() ?? '',
-      ); // replace 1 with dynamic userId if needed
+      final data =
+          await DashboardService.fetchAttendanceCandidates(); // replace 1 with dynamic userId if needed
       setState(() {
         attendanceCandidates = data;
       });
@@ -1541,16 +1536,13 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
 
   Future<void> loadDashboardSummary() async {
     try {
-      final checkAdmin = userProvider?.admin ?? false;
+      // final checkAdmin = userProvider?.admin ?? false;
 
-      final summary = checkAdmin
-          ? await DashboardSummaryService.fetchSimpleAdminSummary(
-              userProvider?.accessToken.toString() ?? '',
-            )
-          : await DashboardSummaryService.fetchSimpleUserSummary(
-              userProvider?.accessToken.toString() ?? '',
-            );
-
+      // final summary = checkAdmin
+      //     ? await DashboardSummaryService.fetchSimpleAdminSummary()
+      //     : await DashboardSummaryService.fetchSimpleUserSummary();
+      final summary =
+          await DashboardSummaryService.fetchSimpleAdminUserSummary();
       if (summary != null) {
         setState(() {
           dashboardSummary = summary;
@@ -1657,12 +1649,9 @@ class _SetTargetPageState extends State<SetTargetPage> {
                       onTap: () async {
                         final newTarget = int.tryParse(controller.text) ?? 0;
                         final candidateId = _candidates[index]['id'];
-                        final token =
-                            userProvider?.accessToken.toString() ?? '';
 
                         try {
                           await DashboardService.createTarget(
-                            token: token,
                             userId: candidateId.toString(),
                             newTarget: newTarget,
                           );
@@ -1784,13 +1773,63 @@ class _SetTargetPageState extends State<SetTargetPage> {
     );
   }
 
-  void _showReportDialog(int index) {
+  void _showReportDialog(int index) async {
     final candidate = _candidates[index];
+    Map<String, String> monthlyData = {};
+    Map<String, String> yearlyData = {};
+
+    yearlyData = await _loadYearlyStats(candidate['id'].toString());
+    monthlyData = await _loadMonthlyStats(candidate['id'].toString());
 
     showDialog(
       context: context,
-      builder: (context) => _ReportDialog(candidate: candidate),
+      builder: (context) => _ReportDialog(
+        candidate: candidate,
+        monthlyData: monthlyData,
+        yearlyData: yearlyData,
+      ),
     );
+  }
+
+  Future<Map<String, String>> _loadYearlyStats(String candidateId) async {
+    final stats = await ReportService().fetchYearlyStats(
+      userId: candidateId,
+      year: DateTime.now().year.toString(),
+    );
+    Map<String, String> yearlyData = {};
+    if (stats != null) {
+      setState(() {
+        yearlyData = {
+          'Target': stats.targetCount.toString(),
+          'Turn-up': stats.goForInterviewCount.toString(),
+          'Selection': stats.selectedCandidateCount.toString(),
+          'Joining': stats.joiningCandidateCount.toString(),
+          'Closer': '0', // optional if not from backend
+        };
+      });
+    }
+    return yearlyData;
+  }
+
+  Future<Map<String, String>> _loadMonthlyStats(String candidateId) async {
+    final stats = await ReportService().fetchMonthlyStats(
+      userId: candidateId,
+      year: DateTime.now().year.toString(),
+      month: DateTime.now().month.toString(),
+    );
+    Map<String, String> monthlyData = {};
+    if (stats != null) {
+      setState(() {
+        monthlyData = {
+          'Target': stats.targetCount.toString(),
+          'Turn-up': stats.goForInterviewCount.toString(),
+          'Selection': stats.selectedCandidateCount.toString(),
+          'Joining': stats.joiningCandidateCount.toString(),
+          'Closer': '0', // optional if not from backend
+        };
+      });
+    }
+    return monthlyData;
   }
 
   @override
@@ -1905,8 +1944,14 @@ class _SetTargetPageState extends State<SetTargetPage> {
 // Separate StatefulWidget for Report Dialog to handle tab switching
 class _ReportDialog extends StatefulWidget {
   final Map<String, dynamic> candidate;
+  final Map<String, String> monthlyData;
+  final Map<String, String> yearlyData;
 
-  const _ReportDialog({required this.candidate});
+  const _ReportDialog({
+    required this.candidate,
+    required this.monthlyData,
+    required this.yearlyData,
+  });
 
   @override
   State<_ReportDialog> createState() => _ReportDialogState();
@@ -1916,7 +1961,7 @@ class _ReportDialogState extends State<_ReportDialog> {
   bool _isYearlySelected = false; // Start with Monthly selected
 
   // Monthly data (from first screenshot)
-  Map<String, String> _monthlyData = {};
+
   // {
   //   'Target': '5',
   //   'Turn-up': '6',
@@ -1926,7 +1971,7 @@ class _ReportDialogState extends State<_ReportDialog> {
   // };
 
   // Yearly data (from second screenshot)
-  Map<String, String> _yearlyData = {};
+
   // {
   //   'Target': '60',
   //   'Turn-up': '72',
@@ -1937,7 +1982,7 @@ class _ReportDialogState extends State<_ReportDialog> {
 
   void _shareReport() {
     final period = _isYearlySelected ? 'Yearly' : 'Monthly';
-    final data = _isYearlySelected ? _yearlyData : _monthlyData;
+    final data = _isYearlySelected ? widget.yearlyData : widget.monthlyData;
 
     String shareText =
         '${widget.candidate['name']}/${widget.candidate['id']} - $period Report\n\n';
@@ -1953,13 +1998,13 @@ class _ReportDialogState extends State<_ReportDialog> {
   void initState() {
     super.initState();
     // Load monthly data (if needed)
-    _loadYearlyStats();
-    _loadMonthlyStats();
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentData = _isYearlySelected ? _yearlyData : _monthlyData;
+    final currentData = _isYearlySelected
+        ? widget.yearlyData
+        : widget.monthlyData;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -2154,47 +2199,6 @@ class _ReportDialogState extends State<_ReportDialog> {
         ),
       ),
     );
-  }
-
-  Future<void> _loadYearlyStats() async {
-    final stats = await ReportService().fetchYearlyStats(
-      userId: widget.candidate['id'].toString(),
-      year: DateTime.now().year.toString(),
-      token: _HomeTabScreenState.userProvider?.accessToken.toString() ?? '',
-    );
-
-    if (stats != null) {
-      setState(() {
-        _yearlyData = {
-          'Target': stats.targetCount.toString(),
-          'Turn-up': stats.goForInterviewCount.toString(),
-          'Selection': stats.selectedCandidateCount.toString(),
-          'Joining': stats.joiningCandidateCount.toString(),
-          'Closer': '0', // optional if not from backend
-        };
-      });
-    }
-  }
-
-  Future<void> _loadMonthlyStats() async {
-    final stats = await ReportService().fetchMonthlyStats(
-      userId: widget.candidate['id'].toString(),
-      year: DateTime.now().year.toString(),
-      month: DateTime.now().month.toString(),
-      token: _HomeTabScreenState.userProvider?.accessToken.toString() ?? '',
-    );
-
-    if (stats != null) {
-      setState(() {
-        _monthlyData = {
-          'Target': stats.targetCount.toString(),
-          'Turn-up': stats.goForInterviewCount.toString(),
-          'Selection': stats.selectedCandidateCount.toString(),
-          'Joining': stats.joiningCandidateCount.toString(),
-          'Closer': '0', // optional if not from backend
-        };
-      });
-    }
   }
 
   Widget _buildMetricColumn(String label, String value) {

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 
 import '../models/company_model.dart';
 import 'package:http/http.dart' as http;
@@ -9,14 +9,18 @@ import '../models/create_candidate_response.dart';
 import 'package:http_parser/http_parser.dart';
 import '../models/create_candidate_with_resume.dart';
 import 'package:mime/mime.dart'; // for lookupMimeType
-import 'package:path/path.dart'; // for basename
+// for basename
 import '../services/host_service.dart'; // Ensure you have this import for baseUrl
+import 'package:flutter/foundation.dart'; // For kIsWeb
+import '../services/token_service.dart';
+// For non-web platforms
 
 class AddCandidateService {
   static const String baseUrl = HostService.baseUrl;
 
   // this method help to get all Locality Name from the database
-  static Future<List<String>> fetchLocalityNames(String token) async {
+  static Future<List<String>> fetchLocalityNames() async {
+    final token = await TokenService.getValidAccessToken();
     final response = await http.get(
       Uri.parse('$baseUrl/localities'),
       headers: {
@@ -34,7 +38,8 @@ class AddCandidateService {
   }
 
   // this method help to get all Job Role Categories Name from the database
-  static Future<List<String>> fetchjobCategories(String token) async {
+  static Future<List<String>> fetchjobCategories() async {
+    final token = await TokenService.getValidAccessToken();
     final response = await http.get(
       Uri.parse('$baseUrl/jobs/job-categories'),
       headers: {
@@ -75,10 +80,9 @@ class AddCandidateService {
     ];
   }
 
-  static Future<List<CompanyIdName>> fetchJobIdAndCompanyNames(
-    String token,
-  ) async {
+  static Future<List<CompanyIdName>> fetchJobIdAndCompanyNames() async {
     final url = Uri.parse('$baseUrl/candidates/companies');
+    final token = await TokenService.getValidAccessToken();
 
     final response = await http.get(
       url,
@@ -254,6 +258,68 @@ class AddCandidateService {
     }
   }
 
+  static Future<String> uploadCandidateWithResume({
+    required CandidateCreateWithResumeDTO candidate,
+    PlatformFile? resumeFile, // Use PlatformFile for cross-platform support
+  }) async {
+    final token = await TokenService.getValidAccessToken();
+    final uri = Uri.parse('$baseUrl/candidate/create-with-resume');
+    final request = http.MultipartRequest('POST', uri);
+
+    // Candidate JSON data
+    final jsonCandidate = jsonEncode(candidate.toJson());
+    request.fields['candidateData'] = jsonCandidate;
+
+    // Optional resume file
+    if (resumeFile != null) {
+      final mimeType =
+          lookupMimeType(resumeFile.name) ?? 'application/octet-stream';
+
+      http.MultipartFile multipartFile;
+
+      if (kIsWeb) {
+        // ✅ Web: Use fromBytes
+        multipartFile = http.MultipartFile.fromBytes(
+          'resumeFile',
+          resumeFile.bytes!,
+          filename: resumeFile.name,
+          contentType: MediaType.parse(mimeType),
+        );
+      } else {
+        // ✅ Mobile/Desktop: Use fromPath
+        multipartFile = await http.MultipartFile.fromPath(
+          'resumeFile',
+          resumeFile.path!,
+          filename: resumeFile.name,
+          contentType: MediaType.parse(mimeType),
+        );
+      }
+
+      request.files.add(multipartFile);
+    }
+
+    // Add JWT token
+    request.headers['Authorization'] = 'Bearer $token';
+
+    try {
+      final response = await request.send();
+      final respStr = await response.stream.bytesToString();
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return "Candidate created successfully";
+      } else {
+        try {
+          final decoded = jsonDecode(respStr);
+          return decoded['message'] ?? 'Failed to upload candidate';
+        } catch (e) {
+          return 'Upload failed (status ${response.statusCode})';
+        }
+      }
+    } catch (e) {
+      return 'Error sending request: ${e.toString()}';
+    }
+  }
+
   // static Future<void> uploadCandidateWithResume({
   //   required CandidateCreateWithResumeDTO candidate,
   //   File? resumeFile, // Optional: if you want to upload a resume file
@@ -294,57 +360,58 @@ class AddCandidateService {
   //   }
   // }
 
-  static Future<String> uploadCandidateWithResume({
-    required CandidateCreateWithResumeDTO candidate,
-    File? resumeFile,
-    required String jwtToken,
-  }) async {
-    final uri = Uri.parse('$baseUrl/candidate/create-with-resume');
-    final request = http.MultipartRequest('POST', uri);
+  // static Future<String> uploadCandidateWithResume({
+  //   required CandidateCreateWithResumeDTO candidate,
+  //   File? resumeFile,
+  //   required String jwtToken,
+  // }) async {
+  //   final uri = Uri.parse('$baseUrl/candidate/create-with-resume');
+  //   final request = http.MultipartRequest('POST', uri);
 
-    // Candidate JSON data
-    final jsonCandidate = jsonEncode(candidate.toJson());
-    request.fields['candidateData'] = jsonCandidate;
+  //   // Candidate JSON data
+  //   final jsonCandidate = jsonEncode(candidate.toJson());
+  //   request.fields['candidateData'] = jsonCandidate;
 
-    // Optional resume file
-    if (resumeFile != null) {
-      final mimeType =
-          lookupMimeType(resumeFile.path) ?? 'application/octet-stream';
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'resumeFile',
-          resumeFile.path,
-          contentType: MediaType.parse(mimeType),
-          filename: basename(resumeFile.path),
-        ),
-      );
-    }
+  //   // Optional resume file
+  //   if (resumeFile != null) {
+  //     final mimeType =
+  //         lookupMimeType(resumeFile.path) ?? 'application/octet-stream';
+  //     request.files.add(
+  //       await http.MultipartFile.fromPath(
+  //         'resumeFile',
+  //         resumeFile.path,
+  //         contentType: MediaType.parse(mimeType),
+  //         filename: basename(resumeFile.path),
+  //       ),
+  //     );
+  //   }
 
-    // Add JWT token
-    request.headers['Authorization'] = 'Bearer $jwtToken';
+  //   // Add JWT token
+  //   request.headers['Authorization'] = 'Bearer $jwtToken';
 
-    try {
-      final response = await request.send();
-      final respStr = await response.stream.bytesToString();
+  //   try {
+  //     final response = await request.send();
+  //     final respStr = await response.stream.bytesToString();
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return "Candidate created successfully";
-      } else {
-        // Attempt to parse backend error message
-        try {
-          final decoded = jsonDecode(respStr);
-          return decoded['message'] ?? 'Failed to upload candidate';
-        } catch (e) {
-          return 'Upload failed (status ${response.statusCode})';
-        }
-      }
-    } catch (e) {
-      return 'Error sending request: ${e.toString()}';
-    }
-  }
+  //     if (response.statusCode == 201 || response.statusCode == 200) {
+  //       return "Candidate created successfully";
+  //     } else {
+  //       // Attempt to parse backend error message
+  //       try {
+  //         final decoded = jsonDecode(respStr);
+  //         return decoded['message'] ?? 'Failed to upload candidate';
+  //       } catch (e) {
+  //         return 'Upload failed (status ${response.statusCode})';
+  //       }
+  //     }
+  //   } catch (e) {
+  //     return 'Error sending request: ${e.toString()}';
+  //   }
+  // }
 
   // Method to check if a phone number is already taken
-  static Future<bool> isPhoneNumberTaken(String phone, String token) async {
+  static Future<bool> isPhoneNumberTaken(String phone) async {
+    final token = await TokenService.getValidAccessToken();
     final response = await http.get(
       Uri.parse('$baseUrl/candidate/check-by-phone?phone=$phone'),
       headers: {
