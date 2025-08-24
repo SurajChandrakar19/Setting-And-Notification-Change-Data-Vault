@@ -92,16 +92,19 @@ class TokenStorage {
     String? profilePic,
   }) async {
     await _storage.write(key: _accessTokenKey, value: accessToken);
-    if (refreshToken != null)
+    if (refreshToken != null) {
       await _storage.write(key: _refreshTokenKey, value: refreshToken);
-    if (tokenType != null)
+    }
+    if (tokenType != null) {
       await _storage.write(key: _tokenTypeKey, value: tokenType);
+    }
     if (userId != null) await _storage.write(key: _userIdKey, value: userId);
     if (email != null) await _storage.write(key: _emailKey, value: email);
     if (name != null) await _storage.write(key: _nameKey, value: name);
     if (role != null) await _storage.write(key: _roleKey, value: role);
-    if (profilePic != null)
+    if (profilePic != null) {
       await _storage.write(key: _profilePicKey, value: profilePic);
+    }
   }
 
   // Get tokens
