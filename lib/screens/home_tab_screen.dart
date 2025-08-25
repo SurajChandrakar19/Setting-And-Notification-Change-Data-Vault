@@ -1801,10 +1801,12 @@ class _SetTargetPageState extends State<SetTargetPage> {
       setState(() {
         yearlyData = {
           'Target': stats.targetCount.toString(),
-          'Turn-up': stats.goForInterviewCount.toString(),
+          'Turn-up': stats.reachedCandidateCount.toString(),
           'Selection': stats.selectedCandidateCount.toString(),
           'Joining': stats.joiningCandidateCount.toString(),
-          'Closer': '0', // optional if not from backend
+          'Closer': stats.closureCandidateCount.toString(),
+          'Achieved': stats.goForInterviewCount
+              .toString(), // optional if not from backend
         };
       });
     }
@@ -1822,10 +1824,12 @@ class _SetTargetPageState extends State<SetTargetPage> {
       setState(() {
         monthlyData = {
           'Target': stats.targetCount.toString(),
-          'Turn-up': stats.goForInterviewCount.toString(),
+          'Turn-up': stats.reachedCandidateCount.toString(),
           'Selection': stats.selectedCandidateCount.toString(),
           'Joining': stats.joiningCandidateCount.toString(),
-          'Closer': '0', // optional if not from backend
+          'Closer': stats.closureCandidateCount.toString(),
+          'Achieved': stats.goForInterviewCount
+              .toString(), // optional if not from backend
         };
       });
     }
@@ -2143,7 +2147,7 @@ class _ReportDialogState extends State<_ReportDialog> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildMetricColumn('Target', currentData['Target']!),
-                      _buildMetricColumn('Achived', currentData['Target']!),
+                      _buildMetricColumn('Achived', currentData['Achieved']!),
                     ],
                   ),
 

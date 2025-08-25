@@ -42,7 +42,8 @@ class DashboardSummaryService {
     }
   }
 
-  static Future<SimpleAdminDashboardSummary?> fetchSimpleAdminUserSummary() async {
+  static Future<SimpleAdminDashboardSummary?>
+  fetchSimpleAdminUserSummary() async {
     final token = await TokenService.getValidAccessToken();
     final response = await http.get(
       Uri.parse('$baseUrl/dashboard/admin-user-summary'),

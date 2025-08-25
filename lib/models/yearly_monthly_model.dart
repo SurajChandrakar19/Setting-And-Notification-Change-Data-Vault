@@ -4,6 +4,8 @@ class YearlyStatsModel {
   final int joiningCandidateCount;
   final int goForInterviewCount;
   final int selectedCandidateCount;
+  final int reachedCandidateCount;
+  final int closureCandidateCount;
 
   YearlyStatsModel({
     required this.year,
@@ -11,6 +13,8 @@ class YearlyStatsModel {
     required this.joiningCandidateCount,
     required this.goForInterviewCount,
     required this.selectedCandidateCount,
+    required this.reachedCandidateCount,
+    required this.closureCandidateCount,
   });
 
   factory YearlyStatsModel.fromJson(Map<String, dynamic> json) {
@@ -20,6 +24,8 @@ class YearlyStatsModel {
       joiningCandidateCount: json['joiningCandidateCount'],
       goForInterviewCount: json['goForInterviewCount'],
       selectedCandidateCount: json['selectedCandidateCount'],
+      reachedCandidateCount: json['reachedCandidateCount'],
+      closureCandidateCount: json['closureCandidateCount'],
     );
   }
 }
