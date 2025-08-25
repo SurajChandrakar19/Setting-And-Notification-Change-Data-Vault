@@ -4,6 +4,7 @@ class SimpleAdminDashboardSummary {
   final bool isAdmin;
   final int todayTotalGoForInterviewCount;
   final int todayTotalReachedCandidateCount;
+  final int todayTotalTargetCandidateCount;
   final int currentMonthTotalTarget;
   final int currentMonthTotalAchieved;
   final double currentMonthProgressPercentage;
@@ -19,6 +20,7 @@ class SimpleAdminDashboardSummary {
     required this.isAdmin,
     required this.todayTotalGoForInterviewCount,
     required this.todayTotalReachedCandidateCount,
+    required this.todayTotalTargetCandidateCount,
     required this.currentMonthTotalTarget,
     required this.currentMonthTotalAchieved,
     required this.currentMonthProgressPercentage,
@@ -38,6 +40,7 @@ class SimpleAdminDashboardSummary {
           json['todayGoForInterviewCount'] ??
           json['todayTotalGoForInterviewCount'] ??
           0,
+      todayTotalTargetCandidateCount: json['todayTotalTarget'] ?? 0,
       todayTotalReachedCandidateCount:
           json['todayReachedCandidateCount'] ??
           json['todayTotalReachedCandidateCount'] ??

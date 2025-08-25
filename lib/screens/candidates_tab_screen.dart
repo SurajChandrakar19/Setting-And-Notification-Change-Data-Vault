@@ -132,7 +132,7 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
         return _CandidateDetailsDialog(
           candidate: candidate,
           index: index,
-          isAdmin: widget.isAdmin,
+          isAdmin: userProvider!.role == 'admin' ? true : false,
           userProvider: userProvider,
           allCandidates: allCandidates,
           onRemoveCandidate: _removeCandidate,

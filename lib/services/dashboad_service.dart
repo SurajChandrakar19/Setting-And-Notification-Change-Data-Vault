@@ -133,7 +133,7 @@ class DashboardService {
   }) async {
     final token = await TokenService.getValidAccessToken();
     final url = Uri.parse(
-      '$baseUrl/targets/current-month?userid=$userId&targetValue=$newTarget',
+      '$baseUrl/targets/current-day?userid=$userId&targetValue=$newTarget',
     );
 
     final response = await http.post(

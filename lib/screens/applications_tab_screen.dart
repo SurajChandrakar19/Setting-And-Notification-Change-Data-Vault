@@ -35,6 +35,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
     'Selected',
     'Rejected',
     'Joined',
+    'Closed',
     'Pending',
   ];
 
@@ -276,18 +277,20 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
   }
 
   Widget _buildApplicationCard(Map<String, dynamic> application, int index) {
-    Color getStatusColor(String status) {
-      switch (status) {
-        case 'Selected':
-          return Colors.blue;
-        case 'Rejected':
-          return Colors.red;
-        case 'Joined':
-          return Colors.green;
-        default:
-          return Colors.orange;
-      }
+  Color getStatusColor(String status) {
+    switch (status) {
+      case 'Selected':
+        return Colors.blue;
+      case 'Rejected':
+        return Colors.red;
+      case 'Joined':
+        return Colors.green;
+      case 'Closed':
+        return Colors.grey;
+      default:
+        return Colors.orange;
     }
+  }
 
     String getStatusText(String status) {
       switch (status) {
@@ -523,7 +526,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
                 ),
                 const SizedBox(width: 12),
                 // More options (3-dot menu, admin only)
-                if (widget.isAdmin)
+                if (userProvider!.role == 'admin')
                   PopupMenuButton<String>(
                     icon: Icon(Icons.more_vert, color: Color(0xFF726E02)),
                     onSelected: (String value) {
@@ -569,6 +572,20 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
                             ),
                             const SizedBox(width: 8),
                             const Text('Joined'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'closed',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.close_outlined,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text('Closed'),
                           ],
                         ),
                       ),
@@ -684,6 +701,8 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
         return Colors.red;
       case 'Joined':
         return Colors.green;
+      case 'Closed':
+        return Colors.grey;
       default:
         return Colors.orange;
     }

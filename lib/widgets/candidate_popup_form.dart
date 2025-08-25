@@ -176,14 +176,14 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
     try {
       // final databaseService = DatabaseService();
       // final loadedLocalities = await databaseService.getLocalities();
-      final loadedLocalities = await AddCandidateService.fetchLocalityNames();
-      final loadedJobRoleCategories =
-          await AddCandidateService.fetchjobCategories();
+      // final loadedLocalities = await AddCandidateService.fetchLocalityNames();
+      // final loadedJobRoleCategories =
+      //     await AddCandidateService.fetchjobCategories();
       final loadedCompanys =
           await AddCandidateService.fetchJobIdAndCompanyNames();
       setState(() {
-        localities = loadedLocalities;
-        jobCategories = loadedJobRoleCategories;
+        // localities = loadedLocalities;
+        // jobCategories = loadedJobRoleCategories;
         companies = loadedCompanys;
       });
       // if (globalCompanies.isEmpty) {
@@ -293,11 +293,16 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
       final selectedCompany = companies.firstWhere(
         (company) =>
             company.id == int.parse(companyId), // Convert companyId to int
-        orElse: () => CompanyIdName(id: 0, companyName: 'No Company'),
+        orElse: () => CompanyIdName(
+          id: 0,
+          companyName: 'No Company',
+          jobTitle: 'No Title',
+          location: 'No Location',
+        ),
       );
 
       // Proceed with your logic for the selected company
-      print("Selected Company: ${selectedCompany.companyName}");
+      // print("Selected Company: ${selectedCompany.companyName}");
     } catch (e) {
       // Log the error if necessary
       print("Error in _onCompanySelected: $e");
@@ -845,286 +850,364 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // Locality Section
-                    _buildSectionTitle('Locality'),
-                    const SizedBox(height: 8),
-                    localities.isEmpty
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                primaryBlue,
-                              ),
-                            ),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  ...localities.take(3).map((locality) {
-                                    final isSelected =
-                                        selectedLocality == locality;
-                                    return GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          selectedLocality = locality;
-                                        });
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isSelected
-                                              ? primaryBlue
-                                              : Colors.blue.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                          border: Border.all(
-                                            color: isSelected
-                                                ? primaryBlue
-                                                : Colors.blue.withOpacity(0.3),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          locality,
-                                          style: TextStyle(
-                                            color: isSelected
-                                                ? Colors.white
-                                                : primaryBlue,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }),
-                                  if (localities.length > 3)
-                                    GestureDetector(
-                                      onTap: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text(
-                                                'All Locations',
-                                              ),
-                                              content: SizedBox(
-                                                width: double.maxFinite,
-                                                child: ListView(
-                                                  shrinkWrap: true,
-                                                  children: localities.map((
-                                                    locality,
-                                                  ) {
-                                                    final isSelected =
-                                                        selectedLocality ==
-                                                        locality;
-                                                    return ListTile(
-                                                      title: Text(locality),
-                                                      trailing: isSelected
-                                                          ? const Icon(
-                                                              Icons.check,
-                                                              color:
-                                                                  primaryBlue,
-                                                            )
-                                                          : null,
-                                                      onTap: () {
-                                                        setState(() {
-                                                          selectedLocality =
-                                                              locality;
-                                                        });
-                                                        Navigator.pop(context);
-                                                      },
-                                                    );
-                                                  }).toList(),
-                                                ),
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(context),
-                                                  child: const Text('Close'),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.blue.withOpacity(0.3),
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          'View More',
-                                          style: TextStyle(
-                                            color: primaryBlue,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              if (_showSelectionErrors &&
-                                  selectedLocality == null)
-                                const Padding(
-                                  padding: EdgeInsets.only(top: 4, left: 4),
-                                  child: Text(
-                                    'Please select a locality',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                    const SizedBox(height: 24),
-                    // Job Category Section
-                    _buildSectionTitle('Job Category'),
-                    const SizedBox(height: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            ...jobCategories.take(3).map((category) {
-                              final isSelected =
-                                  selectedJobCategory == category;
-                              return GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    selectedJobCategory = category;
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? Colors.green
-                                        : Colors.green.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? Colors.green
-                                          : Colors.green.withOpacity(0.3),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    category,
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : Colors.green,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
+
+                    DropdownButtonFormField<CompanyIdName>(
+                      value:
+                          selectedCompany, // This must be a valid CompanyIdName
+                      items: companies.isNotEmpty
+                          ? companies.map((company) {
+                              return DropdownMenuItem<CompanyIdName>(
+                                value: company,
+                                child: Text(company.companyName),
                               );
-                            }),
-                            if (jobCategories.length > 3)
-                              GestureDetector(
-                                onTap: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        title: const Text('All Job Roles'),
-                                        content: SizedBox(
-                                          width: double.maxFinite,
-                                          child: ListView(
-                                            shrinkWrap: true,
-                                            children: jobCategories.map((
-                                              category,
-                                            ) {
-                                              final isSelected =
-                                                  selectedJobCategory ==
-                                                  category;
-                                              return ListTile(
-                                                title: Text(category),
-                                                trailing: isSelected
-                                                    ? const Icon(
-                                                        Icons.check,
-                                                        color: Colors.green,
-                                                      )
-                                                    : null,
-                                                onTap: () {
-                                                  setState(() {
-                                                    selectedJobCategory =
-                                                        category;
-                                                  });
-                                                  Navigator.pop(context);
-                                                },
-                                              );
-                                            }).toList(),
-                                          ),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: const Text('Close'),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: Colors.green.withOpacity(0.3),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'View More',
-                                    style: TextStyle(
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
+                            }).toList()
+                          : [
+                              DropdownMenuItem<CompanyIdName>(
+                                value: null,
+                                child: Text("No companies available"),
                               ),
-                          ],
+                            ], // Show "No companies available" if the list is empty
+                      onChanged: (CompanyIdName? selected) {
+                        if (selected != null) {
+                          setState(() {
+                            selectedCompany = selected;
+                            selectedCompanyId = selected.id
+                                .toString(); // set radio logic variable
+                            // When company is selected, set locality and job category from the selected company.
+                            selectedLocality = selected.location;
+                            selectedJobCategory = selected.jobTitle;
+                            _onCompanySelected(
+                              selected.id.toString(),
+                            ); // mimic radio tap
+                          });
+                        }
+                      },
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
                         ),
-                        if (_showSelectionErrors && selectedJobCategory == null)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 4, left: 4),
-                            child: Text(
-                              'Please select a job category',
-                              style: TextStyle(color: Colors.red, fontSize: 12),
-                            ),
-                          ),
-                      ],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        hintText: 'Select a company',
+                      ),
                     ),
+
+                    // Locality Section
+                    // _buildSectionTitle('Locality'),
+                    const SizedBox(height: 8),
+
+                    // localities.isEmpty
+                    //     ? const Center(
+                    //         child: CircularProgressIndicator(
+                    //           valueColor: AlwaysStoppedAnimation<Color>(
+                    //             primaryBlue,
+                    //           ),
+                    //         ),
+                    //       )
+                    //     : Column(
+                    //         crossAxisAlignment: CrossAxisAlignment.start,
+                    //         children: [
+                    //           Wrap(
+                    //             spacing: 8,
+                    //             runSpacing: 8,
+                    //             children: [
+                    //               ...localities.take(3).map((locality) {
+                    //                 final isSelected =
+                    //                     selectedLocality == locality;
+                    //                 return GestureDetector(
+                    //                   onTap: () {
+                    //                     setState(() {
+                    //                       selectedLocality = locality;
+                    //                     });
+                    //                   },
+                    //                   child: Container(
+                    //                     padding: const EdgeInsets.symmetric(
+                    //                       horizontal: 16,
+                    //                       vertical: 8,
+                    //                     ),
+                    //                     decoration: BoxDecoration(
+                    //                       color: isSelected
+                    //                           ? primaryBlue
+                    //                           : Colors.blue.withOpacity(0.1),
+                    //                       borderRadius: BorderRadius.circular(
+                    //                         20,
+                    //                       ),
+                    //                       border: Border.all(
+                    //                         color: isSelected
+                    //                             ? primaryBlue
+                    //                             : Colors.blue.withOpacity(0.3),
+                    //                       ),
+                    //                     ),
+                    //                     child: Text(
+                    //                       locality,
+                    //                       style: TextStyle(
+                    //                         color: isSelected
+                    //                             ? Colors.white
+                    //                             : primaryBlue,
+                    //                         fontWeight: FontWeight.w500,
+                    //                         fontSize: 14,
+                    //                       ),
+                    //                     ),
+                    //                   ),
+                    //                 );
+                    //               }),
+                    //               if (localities.length > 3)
+                    //                 GestureDetector(
+                    //                   onTap: () {
+                    //                     showDialog(
+                    //                       context: context,
+                    //                       builder: (context) {
+                    //                         return AlertDialog(
+                    //                           title: const Text(
+                    //                             'All Locations',
+                    //                           ),
+                    //                           content: SizedBox(
+                    //                             width: double.maxFinite,
+                    //                             child: ListView(
+                    //                               shrinkWrap: true,
+                    //                               children: localities.map((
+                    //                                 locality,
+                    //                               ) {
+                    //                                 final isSelected =
+                    //                                     selectedLocality ==
+                    //                                     locality;
+                    //                                 return ListTile(
+                    //                                   title: Text(locality),
+                    //                                   trailing: isSelected
+                    //                                       ? const Icon(
+                    //                                           Icons.check,
+                    //                                           color:
+                    //                                               primaryBlue,
+                    //                                         )
+                    //                                       : null,
+                    //                                   onTap: () {
+                    //                                     setState(() {
+                    //                                       selectedLocality =
+                    //                                           locality;
+                    //                                     });
+                    //                                     Navigator.pop(context);
+                    //                                   },
+                    //                                 );
+                    //                               }).toList(),
+                    //                             ),
+                    //                           ),
+                    //                           actions: [
+                    //                             TextButton(
+                    //                               onPressed: () =>
+                    //                                   Navigator.pop(context),
+                    //                               child: const Text('Close'),
+                    //                             ),
+                    //                           ],
+                    //                         );
+                    //                       },
+                    //                     );
+                    //                   },
+                    //                   child: Container(
+                    //                     padding: const EdgeInsets.symmetric(
+                    //                       horizontal: 16,
+                    //                       vertical: 8,
+                    //                     ),
+                    //                     decoration: BoxDecoration(
+                    //                       color: Colors.blue.withOpacity(0.1),
+                    //                       borderRadius: BorderRadius.circular(
+                    //                         20,
+                    //                       ),
+                    //                       border: Border.all(
+                    //                         color: Colors.blue.withOpacity(0.3),
+                    //                       ),
+                    //                     ),
+                    //                     child: const Text(
+                    //                       'View More',
+                    //                       style: TextStyle(
+                    //                         color: primaryBlue,
+                    //                         fontWeight: FontWeight.w500,
+                    //                         fontSize: 14,
+                    //                       ),
+                    //                     ),
+                    //                   ),
+                    //                 ),
+                    //             ],
+                    //           ),
+                    //           if (_showSelectionErrors &&
+                    //               selectedLocality == null)
+                    //             const Padding(
+                    //               padding: EdgeInsets.only(top: 4, left: 4),
+                    //               child: Text(
+                    //                 'Please select a locality',
+                    //                 style: TextStyle(
+                    //                   color: Colors.red,
+                    //                   fontSize: 12,
+                    //                 ),
+                    //               ),
+                    //             ),
+                    //         ],
+                    //       ),
+                    // const SizedBox(height: 24),
+                    // Only show locality and job category if a company is selected
+
+                    // Only show locality and job category if a company is selected
+                    if (selectedCompany != null) ...[
+                      // Locality Section
+                      const SizedBox(height: 24),
+                      _buildSectionTitle('Locality'),
+                      const SizedBox(height: 8),
+                      Text(
+                        selectedLocality ?? 'No locality available',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Job Category Section
+                      _buildSectionTitle('Job Category'),
+                      const SizedBox(height: 8),
+                      Text(
+                        selectedJobCategory ?? 'No job category available',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+
+                    // Job Category Section
+                    // _buildSectionTitle('Job Category'),
+                    const SizedBox(height: 8),
+
+                    // Column(
+                    //   crossAxisAlignment: CrossAxisAlignment.start,
+                    //   children: [
+                    //     Wrap(
+                    //       spacing: 8,
+                    //       runSpacing: 8,
+                    //       children: [
+                    //         ...jobCategories.take(3).map((category) {
+                    //           final isSelected =
+                    //               selectedJobCategory == category;
+                    //           return GestureDetector(
+                    //             onTap: () {
+                    //               setState(() {
+                    //                 selectedJobCategory = category;
+                    //               });
+                    //             },
+                    //             child: Container(
+                    //               padding: const EdgeInsets.symmetric(
+                    //                 horizontal: 16,
+                    //                 vertical: 8,
+                    //               ),
+                    //               decoration: BoxDecoration(
+                    //                 color: isSelected
+                    //                     ? Colors.green
+                    //                     : Colors.green.withOpacity(0.1),
+                    //                 borderRadius: BorderRadius.circular(20),
+                    //                 border: Border.all(
+                    //                   color: isSelected
+                    //                       ? Colors.green
+                    //                       : Colors.green.withOpacity(0.3),
+                    //                 ),
+                    //               ),
+                    //               child: Text(
+                    //                 category,
+                    //                 style: TextStyle(
+                    //                   color: isSelected
+                    //                       ? Colors.white
+                    //                       : Colors.green,
+                    //                   fontWeight: FontWeight.w500,
+                    //                   fontSize: 14,
+                    //                 ),
+                    //               ),
+                    //             ),
+                    //           );
+                    //         }),
+                    //         if (jobCategories.length > 3)
+                    //           GestureDetector(
+                    //             onTap: () {
+                    //               showDialog(
+                    //                 context: context,
+                    //                 builder: (context) {
+                    //                   return AlertDialog(
+                    //                     title: const Text('All Job Roles'),
+                    //                     content: SizedBox(
+                    //                       width: double.maxFinite,
+                    //                       child: ListView(
+                    //                         shrinkWrap: true,
+                    //                         children: jobCategories.map((
+                    //                           category,
+                    //                         ) {
+                    //                           final isSelected =
+                    //                               selectedJobCategory ==
+                    //                               category;
+                    //                           return ListTile(
+                    //                             title: Text(category),
+                    //                             trailing: isSelected
+                    //                                 ? const Icon(
+                    //                                     Icons.check,
+                    //                                     color: Colors.green,
+                    //                                   )
+                    //                                 : null,
+                    //                             onTap: () {
+                    //                               setState(() {
+                    //                                 selectedJobCategory =
+                    //                                     category;
+                    //                               });
+                    //                               Navigator.pop(context);
+                    //                             },
+                    //                           );
+                    //                         }).toList(),
+                    //                       ),
+                    //                     ),
+                    //                     actions: [
+                    //                       TextButton(
+                    //                         onPressed: () =>
+                    //                             Navigator.pop(context),
+                    //                         child: const Text('Close'),
+                    //                       ),
+                    //                     ],
+                    //                   );
+                    //                 },
+                    //               );
+                    //             },
+                    //             child: Container(
+                    //               padding: const EdgeInsets.symmetric(
+                    //                 horizontal: 16,
+                    //                 vertical: 8,
+                    //               ),
+                    //               decoration: BoxDecoration(
+                    //                 color: Colors.green.withOpacity(0.1),
+                    //                 borderRadius: BorderRadius.circular(20),
+                    //                 border: Border.all(
+                    //                   color: Colors.green.withOpacity(0.3),
+                    //                 ),
+                    //               ),
+                    //               child: const Text(
+                    //                 'View More',
+                    //                 style: TextStyle(
+                    //                   color: Colors.green,
+                    //                   fontWeight: FontWeight.w500,
+                    //                   fontSize: 14,
+                    //                 ),
+                    //               ),
+                    //             ),
+                    //           ),
+                    //       ],
+                    //     ),
+                    //     if (_showSelectionErrors && selectedJobCategory == null)
+                    //       const Padding(
+                    //         padding: EdgeInsets.only(top: 4, left: 4),
+                    //         child: Text(
+                    //           'Please select a job category',
+                    //           style: TextStyle(color: Colors.red, fontSize: 12),
+                    //         ),
+                    //       ),
+                    //   ],
+                    // ),
                     const SizedBox(height: 24),
                     // Qualification Section
                     _buildSectionTitle('Qualification'),
@@ -1252,46 +1335,6 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
                     // const SizedBox(height: 8),
 
                     // Dropdown that controls radio selection logic
-                    DropdownButtonFormField<CompanyIdName>(
-                      value:
-                          selectedCompany, // This must be a valid CompanyIdName
-                      items: companies.isNotEmpty
-                          ? companies.map((company) {
-                              return DropdownMenuItem<CompanyIdName>(
-                                value: company,
-                                child: Text(company.companyName),
-                              );
-                            }).toList()
-                          : [
-                              DropdownMenuItem<CompanyIdName>(
-                                value: null,
-                                child: Text("No companies available"),
-                              ),
-                            ], // Show "No companies available" if the list is empty
-                      onChanged: (CompanyIdName? selected) {
-                        if (selected != null) {
-                          setState(() {
-                            selectedCompany = selected;
-                            selectedCompanyId = selected.id
-                                .toString(); // set radio logic variable
-                            _onCompanySelected(
-                              selected.id.toString(),
-                            ); // mimic radio tap
-                          });
-                        }
-                      },
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        hintText: 'Select a company',
-                      ),
-                    ),
-
                     const SizedBox(height: 8),
 
                     // Show error only if no selection was made
@@ -1347,7 +1390,7 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    selectedCompany!.companyName,
+                                    '${selectedCompany!.companyName}\n${selectedCompany!.location}',
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,

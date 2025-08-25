@@ -458,7 +458,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                                   context,
                                   'Target Interview Scheduled',
                                   // '${dashboardSummary?.todayTotalGoForInterviewCount.toString() ?? '0'}/${dashboardSummary?.nextMonth.totalTarget.toString() ?? '0'}',
-                                  '${dashboardSummary?.nextMonth.totalAchieved.toString() ?? '0'}/${dashboardSummary?.nextMonth.totalTarget.toString() ?? '0'}',
+                                  '${dashboardSummary?.todayTotalTargetCandidateCount.toString() ?? '0'}/${dashboardSummary?.todayTotalGoForInterviewCount.toString() ?? '0'}',
                                   Colors.green,
                                 ),
                               ),
@@ -2143,7 +2143,7 @@ class _ReportDialogState extends State<_ReportDialog> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildMetricColumn('Target', currentData['Target']!),
-                      _buildMetricColumn('Turn-up', currentData['Turn-up']!),
+                      _buildMetricColumn('Achived', currentData['Target']!),
                     ],
                   ),
 
@@ -2153,23 +2153,28 @@ class _ReportDialogState extends State<_ReportDialog> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      _buildMetricColumn('Turn-up', currentData['Turn-up']!),
                       _buildMetricColumn(
                         'Selection',
                         currentData['Selection']!,
                       ),
-                      _buildMetricColumn('Joining', currentData['Joining']!),
                     ],
                   ),
 
                   const SizedBox(height: 36),
 
                   // Third row - Closer (centered)
-                  _buildMetricColumn('Closer', currentData['Closer']!),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildMetricColumn('Joining', currentData['Joining']!),
+                      _buildMetricColumn('Closer', currentData['Closer']!),
+                    ],
+                  ),
+                  const SizedBox(height: 36),
                 ],
               ),
             ),
-
-            const SizedBox(height: 32),
 
             // Back button
             Container(

@@ -3,6 +3,8 @@ import '../utils/app_colors.dart';
 import '../models/job_model_create.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/jobs_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
 // Helper widget for styled text fields in the dialog
 class _StyledTextField extends StatelessWidget {
@@ -67,6 +69,7 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
   late List<Job> jobs = [];
   bool isLoading = true;
   // static var userId = "";
+  static bool? adminIs = false;
 
   final List<String> filterOptions = [
     'All',
@@ -91,6 +94,9 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
   @override
   void initState() {
     super.initState();
+    adminIs = Provider.of<UserProvider>(context, listen: false)!.role == 'admin'
+        ? true
+        : false;
     // userId =
     //     Provider.of<UserProvider>(
     //       context,
@@ -274,7 +280,7 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
                         ),
                       ),
                       // Post Job (admin only)
-                      if (widget.isAdmin)
+                      if (adminIs!)
                         Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -702,8 +708,8 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
                                                   : job.id.toString();
                                             });
                                           },
-                                          isAdmin: widget.isAdmin,
-                                          onDelete: widget.isAdmin
+                                          isAdmin: adminIs!,
+                                          onDelete: adminIs!
                                               ? () async {
                                                   if (job.id == null) {
                                                     ScaffoldMessenger.of(
