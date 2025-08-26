@@ -108,7 +108,7 @@ class DashboardService {
     final token = await TokenService.getValidAccessToken();
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/users/with-target'),
+        Uri.parse('$baseUrl/users/with-target-today'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

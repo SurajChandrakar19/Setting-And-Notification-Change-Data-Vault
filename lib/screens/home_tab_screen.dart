@@ -822,7 +822,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       decoration: const BoxDecoration(color: Color(0xFF0A7FF1)),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.previousMonth.totalTarget
+                          (dashboardSummary?.previousMonth.totalJoning
                                   .toString() ??
                               '0'),
                           style: TextStyle(
@@ -838,7 +838,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       decoration: const BoxDecoration(color: Color(0xFF0A7FF1)),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.currentMonth.totalTarget
+                          (dashboardSummary?.currentMonth.totalJoning
                                   .toString() ??
                               '0'),
                           style: TextStyle(
@@ -860,7 +860,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.nextMonth.totalTarget.toString() ??
+                          (dashboardSummary?.nextMonth.totalJoning.toString() ??
                               '0'),
                           style: TextStyle(
                             color: Colors.white,
@@ -903,7 +903,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       decoration: const BoxDecoration(color: Color(0xFF0A7FF1)),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.previousMonth.totalAchieved
+                          (dashboardSummary?.previousMonth.totalClosures
                                   .toString() ??
                               '0'),
                           style: TextStyle(
@@ -919,7 +919,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       decoration: const BoxDecoration(color: Color(0xFF0A7FF1)),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.currentMonth.totalAchieved
+                          (dashboardSummary?.currentMonth.totalClosures
                                   .toString() ??
                               '0'),
                           style: TextStyle(
@@ -941,7 +941,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          (dashboardSummary?.nextMonth.totalAchieved
+                          (dashboardSummary?.nextMonth.totalClosures
                                   .toString() ??
                               '0'),
                           style: TextStyle(
@@ -1742,7 +1742,7 @@ class _SetTargetPageState extends State<SetTargetPage> {
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w400,
-                          color: Colors.black87,
+                          color: Color.fromARGB(221, 24, 16, 16),
                         ),
                         decoration: const InputDecoration(
                           border: InputBorder.none,

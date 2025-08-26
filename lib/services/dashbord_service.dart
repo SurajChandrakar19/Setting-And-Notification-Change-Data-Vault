@@ -69,7 +69,7 @@ class ReportService {
   }) async {
     final token = await TokenService.getValidAccessToken();
     final url = Uri.parse(
-      '$baseUrl/user-report/yearly?userId=$userId&year=$year',
+      '$baseUrl/user-report/year?userId=$userId&year=$year',
     );
 
     final response = await http.get(

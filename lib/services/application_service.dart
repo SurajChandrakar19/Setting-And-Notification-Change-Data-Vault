@@ -275,9 +275,13 @@ class ReachedCandidateService {
   }
 
   static Future<void> downloadJobsCSV() async {
+    final token = await TokenService.getValidAccessToken();
+    if (token == null) {
+      throw Exception('No access token found. Please login again.');
+    }
+
     final url = Uri.parse('$baseUrl/applications/export');
     final fileName = 'application_${DateTime.now().millisecondsSinceEpoch}.csv';
-    final token = await TokenService.getValidAccessToken();
 
     final response = await http.get(
       url,
@@ -285,29 +289,35 @@ class ReachedCandidateService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to download CSV. Status: ${response.statusCode}');
+      throw Exception(
+        'Failed to download CSV. Status: ${response.statusCode}, Body: ${response.body}',
+      );
     }
 
-    final csvBytes = response.bodyBytes;
+    final bytes = response.bodyBytes;
 
     if (kIsWeb) {
-      // ✅ Web-specific CSV download logic using universal_html
-      final blob = html.Blob([csvBytes], 'text/csv');
+      // ✅ Web download
+      final blob = html.Blob([bytes], 'text/csv');
       final url = html.Url.createObjectUrlFromBlob(blob);
       final anchor = html.AnchorElement(href: url)
-        ..setAttribute("download", fileName)
+        ..setAttribute('download', fileName)
         ..click();
       html.Url.revokeObjectUrl(url);
       return;
     }
 
-    if (!(Platform.isAndroid || Platform.isIOS)) {
+    if (!(Platform.isAndroid ||
+        Platform.isIOS ||
+        Platform.isWindows ||
+        Platform.isMacOS ||
+        Platform.isLinux)) {
       throw UnsupportedError(
-        'CSV download supported only on Android, iOS, or Web.',
+        'CSV download supported only on Android, iOS, Web, or Desktop.',
       );
     }
 
-    // ✅ Mobile: Write file and open
+    // ✅ Mobile: Ask for storage permission (only Android)
     if (Platform.isAndroid) {
       final permission = await Permission.storage.request();
       if (!permission.isGranted) {
@@ -315,11 +325,13 @@ class ReachedCandidateService {
       }
     }
 
+    // ✅ Save file (Mobile/Desktop)
     final dir = await getApplicationDocumentsDirectory();
     final filePath = '${dir.path}/$fileName';
     final file = File(filePath);
-    await file.writeAsBytes(csvBytes);
+    await file.writeAsBytes(bytes);
 
+    // ✅ Open file
     final result = await OpenFilex.open(filePath);
     if (result.type != ResultType.done) {
       throw Exception('Failed to open file: ${result.message}');

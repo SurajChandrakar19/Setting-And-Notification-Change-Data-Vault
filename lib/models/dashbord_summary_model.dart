@@ -69,8 +69,8 @@ class MonthData {
   final String monthName;
   final int monthNumber;
   final int year;
-  final int totalTarget;
-  final int totalAchieved;
+  final int totalJoning;
+  final int totalClosures;
   final double totalProgressPercentage;
   final String periodKey;
 
@@ -78,8 +78,8 @@ class MonthData {
     required this.monthName,
     required this.monthNumber,
     required this.year,
-    required this.totalTarget,
-    required this.totalAchieved,
+    required this.totalJoning,
+    required this.totalClosures,
     required this.totalProgressPercentage,
     required this.periodKey,
   });
@@ -89,8 +89,8 @@ class MonthData {
       monthName: json['monthName'] ?? '',
       monthNumber: json['monthNumber'] ?? 0,
       year: json['year'] ?? 0,
-      totalTarget: json['target'] ?? json['totalTarget'] ?? 0,
-      totalAchieved: json['achieved'] ?? json['totalAchieved'] ?? 0,
+      totalJoning: json['target'] ?? json['totalJoning'] ?? 0,
+      totalClosures: json['achieved'] ?? json['totalClosures'] ?? 0,
       totalProgressPercentage:
           (json['progressPercentage'] ?? json['totalProgressPercentage'] ?? 0.0)
               .toDouble(),

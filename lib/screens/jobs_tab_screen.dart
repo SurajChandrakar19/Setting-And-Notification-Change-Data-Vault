@@ -94,7 +94,7 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
   @override
   void initState() {
     super.initState();
-    adminIs = Provider.of<UserProvider>(context, listen: false)!.role == 'admin'
+    adminIs = Provider.of<UserProvider>(context, listen: false).role == 'admin'
         ? true
         : false;
     // userId =

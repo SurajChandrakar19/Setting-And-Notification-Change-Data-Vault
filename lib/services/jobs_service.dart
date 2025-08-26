@@ -209,6 +209,10 @@ class JobService {
 
   static Future<void> downloadJobsCSV() async {
     final token = await TokenService.getValidAccessToken();
+    if (token == null) {
+      throw Exception('No access token found. Please login again.');
+    }
+
     final url = Uri.parse('$baseUrl/jobs/export');
     final fileName = 'jobs_${DateTime.now().millisecondsSinceEpoch}.csv';
 
@@ -218,13 +222,15 @@ class JobService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to download CSV. Status: ${response.statusCode}');
+      throw Exception(
+        'Failed to download CSV. Status: ${response.statusCode}, Body: ${response.body}',
+      );
     }
 
     final csvBytes = response.bodyBytes;
 
+    // ✅ Web
     if (kIsWeb) {
-      // ✅ Web-specific CSV download logic using universal_html
       final blob = html.Blob([csvBytes], 'text/csv');
       final url = html.Url.createObjectUrlFromBlob(blob);
       final anchor = html.AnchorElement(href: url)
@@ -234,13 +240,18 @@ class JobService {
       return;
     }
 
-    if (!(Platform.isAndroid || Platform.isIOS)) {
+    // ✅ Desktop & Mobile (Android/iOS/macOS/Windows/Linux)
+    if (!(Platform.isAndroid ||
+        Platform.isIOS ||
+        Platform.isWindows ||
+        Platform.isMacOS ||
+        Platform.isLinux)) {
       throw UnsupportedError(
-        'CSV download supported only on Android, iOS, or Web.',
+        'CSV download supported only on Android, iOS, Web, or Desktop.',
       );
     }
 
-    // ✅ Mobile: Write file and open
+    // ✅ Request storage permission on Android
     if (Platform.isAndroid) {
       final permission = await Permission.storage.request();
       if (!permission.isGranted) {
@@ -248,11 +259,13 @@ class JobService {
       }
     }
 
+    // ✅ Save file in app documents directory
     final dir = await getApplicationDocumentsDirectory();
     final filePath = '${dir.path}/$fileName';
     final file = File(filePath);
     await file.writeAsBytes(csvBytes);
 
+    // ✅ Open file with default app
     final result = await OpenFilex.open(filePath);
     if (result.type != ResultType.done) {
       throw Exception('Failed to open file: ${result.message}');
