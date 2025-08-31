@@ -18,6 +18,7 @@ import '../services/token_service.dart';
 class JobService {
   static const String baseUrl = HostService.baseUrl; // Update to your serve
 
+  // using
   static Future<List<Job>> fetchJobsByUserId() async {
     try {
       final token = await TokenService.getValidAccessToken();
@@ -42,6 +43,7 @@ class JobService {
     }
   }
 
+  // using
   static Future<void> createJob(Job job) async {
     final token = await TokenService.getValidAccessToken();
     final response = await http.post(
@@ -57,17 +59,7 @@ class JobService {
     }
   }
 
-  static Future<void> updateJob(Job job) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/${job.userId}/jobs'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(job.toJson()),
-    );
-    if (response.statusCode != 200) {
-      throw Exception('Failed to update job');
-    }
-  }
-
+  // using
   static Future<void> deleteJob(int id) async {
     final token = await TokenService.getValidAccessToken();
     final response = await http.delete(
@@ -81,131 +73,6 @@ class JobService {
       throw Exception('Failed to delete job');
     }
   }
-
-  // static Future<void> downloadJobsCSV(String token) async {
-  //   final response = await http.get(
-  //     Uri.parse('$baseUrl/jobs/export'),
-  //     headers: {
-  //       'Authorization': 'Bearer $token',
-  //       'Content-Type': 'application/json',
-  //     },
-  //   );
-
-  //   if (response.statusCode == 200) {
-  //     if (kIsWeb) {
-  //       // Web download logic
-  //       downloadCsvInWeb(response.body, 'reached_candidates.csv');
-  //     } else {
-  //       // Mobile/Desktop logic
-  //       final directory = await getApplicationDocumentsDirectory();
-  //       final filePath = '${directory.path}/jobs.csv';
-  //       final file = File(filePath);
-  //       await file.writeAsBytes(response.bodyBytes);
-  //       print('CSV downloaded at $filePath');
-  //     }
-  //   } else {
-  //     throw Exception(
-  //       'Failed to download CSV. Status code: ${response.statusCode}',
-  //     );
-  //   }
-  // }
-
-  // static void downloadCsvInWeb(String csvContent, String fileName) {
-  //   // Convert to bytes
-  //   final bytes = utf8.encode(csvContent);
-  //   final uint8List = Uint8List.fromList(bytes);
-
-  //   // Convert to JS Uint8Array
-  //   final jsUint8Array = uint8List.toJS;
-
-  //   // Create JSArray for Blob constructor
-  //   final blobParts = JSArray<JSAny>();
-  //   blobParts.add(jsUint8Array as JSAny);
-
-  //   // Create the Blob
-  //   final blob = web.Blob(
-  //     blobParts,
-  //     web.BlobPropertyBag(type: 'text/csv'.toJS),
-  //   );
-
-  //   // Generate download URL
-  //   final url = web.URL.createObjectURL(blob);
-
-  //   // Create anchor element
-  //   final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
-  //   anchor.href = url;
-  //   anchor.download = fileName.toJS; // ✅ must be JSString
-  //   anchor.style.display = 'none'.toJS; // ✅ must be JSString
-
-  //   // Trigger download
-  //   web.document.body!.appendChild(anchor);
-  //   anchor.click();
-  //   anchor.remove();
-
-  //   // Cleanup
-  //   web.URL.revokeObjectURL(url);
-  // }
-
-  // static void downloadCsvInWeb(String csvContent, String fileName) {
-  //   // Convert to bytes
-  //   final bytes = utf8.encode(csvContent);
-  //   final uint8List = Uint8List.fromList(bytes);
-
-  //   // Convert to JS Uint8Array
-  //   final jsUint8Array = uint8List.toJS;
-
-  //   // Create JSArray for Blob constructor
-  //   final blobParts = JSArray<JSAny>();
-  //   blobParts.add(jsUint8Array as JSAny);
-
-  //   // ✅ Use .toJS only for BlobPropertyBag
-  //   final blob = web.Blob(
-  //     blobParts,
-  //     web.BlobPropertyBag(type: 'text/csv'.toJS),
-  //   );
-
-  //   // Create download URL
-  //   final url = web.URL.createObjectURL(blob);
-
-  //   // Create anchor element
-  //   final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
-  //   anchor.href = url;
-  //   anchor.download = fileName; // ✅ Use regular Dart string
-  //   anchor.style.display = 'none'; // ✅ Use regular Dart string
-
-  //   // Trigger download
-  //   web.document.body!.appendChild(anchor);
-  //   anchor.click();
-  //   anchor.remove();
-
-  //   // Cleanup
-  //   web.URL.revokeObjectURL(url);
-  // }
-
-  // static void downloadCsvInWeb(String csvData, String filename) {
-  //   final bytes = utf8.encode(csvData);
-  //   final blob = html.Blob([bytes]);
-  //   final url = html.Url.createObjectUrlFromBlob(blob);
-  //   final anchor = html.AnchorElement(href: url)
-  //     ..setAttribute("download", filename)
-  //     ..click();
-  //   html.Url.revokeObjectUrl(url);
-  // }
-
-  // static Future<bool> createJob(JobModel job) async {
-  //   final response = await http.post(
-  //     Uri.parse('$baseUrl/create'),
-  //     headers: {'Content-Type': 'application/json'},
-  //     body: jsonEncode(job.toJson()),
-  //   );
-
-  //   if (response.statusCode == 201) {
-  //     return true;
-  //   } else {
-  //     print('Failed to post job: ${response.body}');
-  //     return false;
-  //   }
-  // }
 
   static Future<void> downloadJobsCSV() async {
     final token = await TokenService.getValidAccessToken();

@@ -21,13 +21,22 @@ class AccountDetailsScreen extends StatelessWidget {
                     child: Icon(Icons.person, size: 40, color: Colors.white),
                   ),
                   const SizedBox(height: 12),
-                  Text('John Doe', style: Theme.of(context).textTheme.titleLarge),
-                  Text('john.doe@email.com', style: Theme.of(context).textTheme.bodyMedium),
+                  Text(
+                    'John Doe',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Text(
+                    'john.doe@email.com',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 32),
-            Text('Profile Information', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Profile Information',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 16),
             TextField(
               decoration: InputDecoration(

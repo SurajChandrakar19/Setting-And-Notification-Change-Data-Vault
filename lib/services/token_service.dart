@@ -6,6 +6,7 @@ import '../services/host_service.dart';
 class TokenService {
   static const String baseUrl = HostService.baseUrl;
 
+  // using
   /// Refresh access token using refresh token
   static Future<bool> refreshAccessToken() async {
     final tokens = await TokenStorage.getTokens();
@@ -39,6 +40,7 @@ class TokenService {
     }
   }
 
+  // using
   // Get token automatically (refresh if needed)
   static Future<String?> getValidAccessToken() async {
     final tokens = await TokenStorage.getTokens();

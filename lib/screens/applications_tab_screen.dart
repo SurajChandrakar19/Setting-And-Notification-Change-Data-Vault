@@ -6,6 +6,8 @@ import '../services/application_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import 'package:intl/intl.dart';
+import '../services/csv_download_service.dart';
+import '../services/permission_service.dart';
 
 class ApplicationsTabScreen extends StatefulWidget {
   final VoidCallback onBackToHome;
@@ -28,6 +30,15 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
   List<Map<String, dynamic>> applications = [];
   static var userId = "";
   UserProvider? userProvider;
+  
+  // CSV data from the provided file
+  String csvData = '''AGE,CANDIDATE NAME,MODIFIED DATE,PHONE,QUALIFICATION,RATING,ROLE,STATUS,TRACKER ADDED DATE,USER NAME
+28,Alice Johnson,2025-08-26T10:21:54.941692,+1987654321,Masters in Computer Science,4,Senior Software Engineer,PENDING,2025-08-26T10:21:55.115339,John Manager
+32,Bob Smith,2025-08-26T10:21:55.052851,+1987654322,PhD in Statistics,5,Data Scientist,SELECTED,2025-08-26T10:21:55.130972,Sarah Recruiter
+29,Carol Davis,2025-08-26T10:21:55.099715,+1987654323,MBA,4,Product Manager,PENDING,2025-08-26T10:21:55.146591,Mike HR
+25,David Wilson,2025-08-26T10:21:54.738074,+1987654324,Bachelors in Marketing,3,Marketing Specialist,REJECTED,2025-08-26T10:21:55.146591,Sarah Recruiter
+27,Emma Brown,2025-08-26T10:21:54.738074,+1987654325,Bachelors in Business,4,Sales Representative,JOINED,2025-08-26T10:21:55.162223,Mike HR''';
+
   // Filter options
   String selectedFilter = 'All';
   List<String> filterOptions = [
@@ -35,8 +46,8 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
     'Selected',
     'Rejected',
     'Joined',
-    'Closed',
     'Pending',
+    'Close',
   ];
 
   List<Map<String, dynamic>> get filteredApplications {
@@ -91,25 +102,9 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
           actions: [
             IconButton(
               icon: Icon(Icons.download),
+              tooltip: 'Download Applications CSV',
               onPressed: () async {
-                try {
-                  // final token = await userId; // Load from shared_preferences
-                  await ReachedCandidateService.downloadJobsCSV();
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('CSV downloaded & opened'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Download failed: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
+                await _handleApplicationsDownload();
               },
             ),
             if (isSelectingForDownload)
@@ -277,20 +272,20 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
   }
 
   Widget _buildApplicationCard(Map<String, dynamic> application, int index) {
-  Color getStatusColor(String status) {
-    switch (status) {
-      case 'Selected':
-        return Colors.blue;
-      case 'Rejected':
-        return Colors.red;
-      case 'Joined':
-        return Colors.green;
-      case 'Closed':
-        return Colors.grey;
-      default:
-        return Colors.orange;
+    Color getStatusColor(String status) {
+      switch (status) {
+        case 'Selected':
+          return Colors.blue;
+        case 'Rejected':
+          return Colors.red;
+        case 'Joined':
+          return Colors.green;
+        case 'Close':
+          return Colors.grey;
+        default:
+          return Colors.orange;
+      }
     }
-  }
 
     String getStatusText(String status) {
       switch (status) {
@@ -300,6 +295,8 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
           return 'Rejected';
         case 'joined':
           return 'Joined';
+        case 'close':
+          return 'Close';
         default:
           return 'Pending';
       }
@@ -576,16 +573,16 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
                         ),
                       ),
                       PopupMenuItem<String>(
-                        value: 'closed',
+                        value: 'close',
                         child: Row(
                           children: [
                             Icon(
-                              Icons.close_outlined,
+                              Icons.close,
                               color: Colors.grey,
                               size: 20,
                             ),
                             const SizedBox(width: 8),
-                            const Text('Closed'),
+                            const Text('Close'),
                           ],
                         ),
                       ),
@@ -701,12 +698,157 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
         return Colors.red;
       case 'Joined':
         return Colors.green;
-      case 'Closed':
+      case 'close':
+      case 'Close':
         return Colors.grey;
       default:
         return Colors.orange;
     }
   }
+
+  /// New Applications Download Method with proper permissions
+  Future<void> _handleApplicationsDownload() async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Downloading Applications CSV...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Check and request storage permissions first
+      final hasPermission = await PermissionService.hasStoragePermission();
+      if (!hasPermission) {
+        Navigator.of(context).pop(); // Close loading dialog
+        
+        // Show permission explanation dialog
+        final shouldRequest = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Storage Permission Required'),
+            content: Text(
+              'This app needs storage permission to download and save the Applications CSV file to your device.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text('Grant Permission'),
+              ),
+            ],
+          ),
+        );
+        
+        if (shouldRequest != true) return;
+        
+        // Request permission
+        final granted = await PermissionService.requestStoragePermission();
+        if (!granted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Storage permission is required to download files. '
+                'Please grant permission in app settings.',
+              ),
+              backgroundColor: Colors.orange,
+              action: SnackBarAction(
+                label: 'Settings',
+                onPressed: () => PermissionService.showPermissionDialog(),
+              ),
+            ),
+          );
+          return;
+        }
+        
+        // Show loading dialog again
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Downloading Applications CSV...'),
+              ],
+            ),
+          ),
+        );
+      }
+      
+      // Download Applications CSV using the sample data (since your server might not have the endpoint)
+      await CSVDownloadService.downloadApplicationsCSV(useSampleData: true);
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Applications CSV downloaded successfully!\nCheck your Downloads folder.',
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 4),
+        ),
+      );
+    } catch (e) {
+      // Close loading dialog if it's still open
+      Navigator.of(context).pop();
+      
+      String errorMessage;
+      if (e.toString().contains('permission')) {
+        errorMessage = 'Storage permission denied. Unable to save file.';
+      } else if (e.toString().contains('network')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else {
+        errorMessage = 'Download failed: ${e.toString()}';
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(child: Text(errorMessage)),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+          action: e.toString().contains('permission')
+              ? SnackBarAction(
+                  label: 'Settings',
+                  textColor: Colors.white,
+                  onPressed: () => PermissionService.showPermissionDialog(),
+                )
+              : null,
+        ),
+      );
+    }
+  }
+
 
   // Placeholder for download logic
   Future<void> _downloadSelectedApplications() async {

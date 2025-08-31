@@ -6,11 +6,12 @@ class NotificationService {
   NotificationService._internal();
 
   final List<NotificationItem> _notifications = [];
-  final ValueNotifier<List<NotificationItem>> notificationsNotifier = 
+  final ValueNotifier<List<NotificationItem>> notificationsNotifier =
       ValueNotifier<List<NotificationItem>>([]);
 
   List<NotificationItem> get notifications => _notifications;
 
+  // using
   void addNotification({
     required String title,
     required String message,
@@ -31,6 +32,7 @@ class NotificationService {
     notificationsNotifier.value = List.from(_notifications);
   }
 
+  // using
   void markAsRead(String id) {
     final index = _notifications.indexWhere((n) => n.id == id);
     if (index != -1) {
@@ -39,6 +41,7 @@ class NotificationService {
     }
   }
 
+  // using
   void markAllAsRead() {
     for (var notification in _notifications) {
       notification.isRead = true;
@@ -74,9 +77,4 @@ class NotificationItem {
   });
 }
 
-enum NotificationType {
-  interview,
-  reschedule,
-  reached,
-  general,
-}
+enum NotificationType { interview, reschedule, reached, general }

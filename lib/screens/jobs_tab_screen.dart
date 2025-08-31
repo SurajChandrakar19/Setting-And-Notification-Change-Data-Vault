@@ -3,6 +3,8 @@ import '../utils/app_colors.dart';
 import '../models/job_model_create.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/jobs_service.dart';
+import '../services/permission_service.dart';
+import '../services/csv_download_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 
@@ -132,22 +134,144 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
           actions: [
             IconButton(
               icon: Icon(Icons.download),
+              tooltip: 'Download Jobs CSV',
               onPressed: () async {
-                try {
-                  // final token = await userId; // Load from shared_preferences
-                  await JobService.downloadJobsCSV();
+                // Show loading dialog
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => AlertDialog(
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Downloading jobs...'),
+                      ],
+                    ),
+                  ),
+                );
 
+                try {
+                  // Check and request storage permissions first
+                  final hasPermission = await PermissionService.hasStoragePermission();
+                  if (!hasPermission) {
+                    Navigator.of(context).pop(); // Close loading dialog
+                    
+                    // Show permission explanation dialog
+                    final shouldRequest = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text('Storage Permission Required'),
+                        content: Text(
+                          'This app needs storage permission to download and save the jobs CSV file to your device.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: Text('Grant Permission'),
+                          ),
+                        ],
+                      ),
+                    );
+                    
+                    if (shouldRequest != true) return;
+                    
+                    // Request permission
+                    final granted = await PermissionService.requestStoragePermission();
+                    if (!granted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Storage permission is required to download files. '
+                            'Please grant permission in app settings.',
+                          ),
+                          backgroundColor: Colors.orange,
+                          action: SnackBarAction(
+                            label: 'Settings',
+                            onPressed: () => PermissionService.showPermissionDialog(),
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    
+                    // Show loading dialog again
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => AlertDialog(
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text('Downloading jobs...'),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  
+                  // Download the CSV file using sample data
+                  await CSVDownloadService.downloadJobsCSV(useSampleData: true);
+                  
+                  // Close loading dialog
+                  Navigator.of(context).pop();
+                  
+                  // Show success message
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('CSV downloaded & opened'),
+                      content: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.white),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'CSV file downloaded successfully!\nCheck your Downloads folder.',
+                            ),
+                          ),
+                        ],
+                      ),
                       backgroundColor: Colors.green,
+                      duration: Duration(seconds: 4),
                     ),
                   );
                 } catch (e) {
+                  // Close loading dialog if it's still open
+                  Navigator.of(context).pop();
+                  
+                  String errorMessage;
+                  if (e.toString().contains('permission')) {
+                    errorMessage = 'Storage permission denied. Unable to save file.';
+                  } else if (e.toString().contains('network')) {
+                    errorMessage = 'Network error. Please check your internet connection.';
+                  } else {
+                    errorMessage = 'Download failed: ${e.toString()}';
+                  }
+                  
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Download failed: $e'),
+                      content: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.white),
+                          SizedBox(width: 12),
+                          Expanded(child: Text(errorMessage)),
+                        ],
+                      ),
                       backgroundColor: Colors.red,
+                      duration: Duration(seconds: 5),
+                      action: e.toString().contains('permission')
+                          ? SnackBarAction(
+                              label: 'Settings',
+                              textColor: Colors.white,
+                              onPressed: () => PermissionService.showPermissionDialog(),
+                            )
+                          : null,
                     ),
                   );
                 }

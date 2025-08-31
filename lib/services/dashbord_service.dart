@@ -8,40 +8,7 @@ import '../services/token_service.dart';
 class DashboardSummaryService {
   static const String baseUrl = HostService.baseUrl;
 
-  static Future<SimpleAdminDashboardSummary?> fetchSimpleAdminSummary() async {
-    final token = await TokenService.getValidAccessToken();
-    final response = await http.get(
-      Uri.parse('$baseUrl/dashboard/admin-summary'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-    if (response.statusCode == 200) {
-      return SimpleAdminDashboardSummary.fromJson(jsonDecode(response.body));
-    } else {
-      print('Error: ${response.statusCode}');
-      return null;
-    }
-  }
-
-  static Future<SimpleAdminDashboardSummary?> fetchSimpleUserSummary() async {
-    final token = await TokenService.getValidAccessToken();
-    final response = await http.get(
-      Uri.parse('$baseUrl/dashboard/user-summary'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-    if (response.statusCode == 200) {
-      return SimpleAdminDashboardSummary.fromJson(jsonDecode(response.body));
-    } else {
-      print('Error: ${response.statusCode}');
-      return null;
-    }
-  }
-
+  // using
   static Future<SimpleAdminDashboardSummary?>
   fetchSimpleAdminUserSummary() async {
     final token = await TokenService.getValidAccessToken();
@@ -63,6 +30,8 @@ class DashboardSummaryService {
 
 class ReportService {
   static const String baseUrl = HostService.baseUrl;
+
+  // using
   Future<YearlyStatsModel?> fetchYearlyStats({
     required String userId,
     required String year,
@@ -88,6 +57,7 @@ class ReportService {
     }
   }
 
+  // using
   Future<YearlyStatsModel?> fetchMonthlyStats({
     required String userId,
     required String year,

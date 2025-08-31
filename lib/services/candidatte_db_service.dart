@@ -12,26 +12,7 @@ class CadidateDBService {
   static const String baseUrl = HostService.baseUrl;
   final Dio _dio = Dio(BaseOptions(baseUrl: 'http://10.0.2.2:8080/api'));
 
-  Future<List<CandidateDB>> getCandidates() async {
-    final response = await _dio.get('/candidates');
-    return (response.data as List)
-        .map((json) => CandidateDB.fromJson(json))
-        .toList();
-  }
-
-  Future<void> createCandidate(CandidateDB candidate) async {
-    await _dio.post('/candidates', data: candidate.toJson());
-  }
-
-  Future<void> updateCandidate(int id, CandidateDB candidate) async {
-    await _dio.put('/candidates/$id', data: candidate.toJson());
-  }
-
-  // Future<void> importCandidates(List<CandidateDB> list) async {
-  //   final jsonList = list.map((c) => c.toJson()).toList();
-  //   await _dio.post('/candidates/import', data: jsonList);
-  // }
-
+  // using
   static Future<Map<String, dynamic>> importCandidates(
     List<CandidateDB> candidates,
   ) async {
@@ -66,30 +47,8 @@ class CadidateDBService {
     }
   }
 
-  Future<List<CandidateModelConverter>> getAllCandidates(
-    int userId,
-    String accessToken,
-  ) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/candidate-db/all'),
-      headers: {
-        'Authorization': 'Bearer $accessToken',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> jsonData = jsonDecode(response.body);
-      return jsonData
-          .map((json) => CandidateModelConverter.fromJson(json))
-          .toList();
-    } else {
-      throw Exception("Failed to fetch candidates: ${response.body}");
-    }
-  }
-
-  Future<List<CandidateModelConverter>> getAllUnlockedCandidates(
-  ) async {
+  // using
+  Future<List<CandidateModelConverter>> getAllUnlockedCandidates() async {
     final token = await TokenService.getValidAccessToken();
     final response = await http.get(
       Uri.parse('$baseUrl/candidate-db/unlocked'),
@@ -109,6 +68,7 @@ class CadidateDBService {
     }
   }
 
+  // using
   Future<List<CandidateModelConverter>> getAllLockedCandidates(
     String userId,
   ) async {
@@ -131,6 +91,7 @@ class CadidateDBService {
     }
   }
 
+  // using
   Future<void> addStatus(DBStatusDTO status) async {
     try {
       final token = await TokenService.getValidAccessToken();
@@ -151,6 +112,7 @@ class CadidateDBService {
     }
   }
 
+  // using
   Future<bool> unlockCandidateById(String id) async {
     try {
       final token = await TokenService.getValidAccessToken();

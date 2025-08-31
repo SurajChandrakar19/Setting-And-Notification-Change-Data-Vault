@@ -11,6 +11,7 @@ import '../services/token_service.dart';
 class CandidateService {
   static const String baseUrl = HostService.baseUrl;
 
+  // using
   /// Insert reached candidate (old way was manual userId, now handled server side)
   static Future<bool> createReachedCandidate({
     required int candidateId,
@@ -37,6 +38,7 @@ class CandidateService {
     return response.statusCode == 200;
   }
 
+  // using
   /// GET all unreached candidates
   static Future<List<Map<String, dynamic>>> fetchCandidates() async {
     final token = await TokenService.getValidAccessToken();
@@ -60,39 +62,7 @@ class CandidateService {
     }
   }
 
-  /// GET candidate by ID
-  static Future<Candidate> fetchCandidateById(int id) async {
-    final token = await TokenService.getValidAccessToken();
-    if (token == null) throw Exception("No valid token available");
-
-    final response = await http.get(
-      Uri.parse('$baseUrl/$id'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      return Candidate.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to load candidate with id $id');
-    }
-  }
-
-  /// POST a new candidate
-  static Future<bool> addCandidate(Candidate candidate) async {
-    final token = await TokenService.getValidAccessToken();
-    if (token == null) throw Exception("No valid token available");
-
-    final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode(_candidateToJson(candidate)),
-    );
-    return response.statusCode == 201;
-  }
-
+  // using
   /// POST update to Go For Interview
   static Future<bool> goForInterview(String clientId) async {
     final token = await TokenService.getValidAccessToken();
@@ -113,6 +83,7 @@ class CandidateService {
     }
   }
 
+  // using
   /// PUT reschedule
   static Future<bool> rescheduleCandidate({
     required int candidateId,
@@ -134,6 +105,7 @@ class CandidateService {
     return response.statusCode == 200;
   }
 
+  // using
   /// Update one candidate at a time
   static Future<bool> updateCandidate({
     required Map<String, dynamic> candidate,
@@ -160,18 +132,7 @@ class CandidateService {
     }
   }
 
-  /// DELETE a candidate
-  static Future<bool> deleteCandidate(int id) async {
-    final token = await TokenService.getValidAccessToken();
-    if (token == null) throw Exception("No valid token available");
-
-    final response = await http.delete(
-      Uri.parse('$baseUrl/$id/delete'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    return response.statusCode == 200;
-  }
-
+  // using
   /// Update rating
   static Future<void> updateCandidateRating({
     required int candidateId,
@@ -196,6 +157,7 @@ class CandidateService {
     }
   }
 
+  // using
   /// Deactivate candidate
   static Future<void> deactivateCandidate(int candidateId) async {
     final token = await TokenService.getValidAccessToken();
@@ -214,24 +176,7 @@ class CandidateService {
     }
   }
 
-  /// Internal helper
-  static Map<String, dynamic> _candidateToJson(Candidate c) {
-    return {
-      'id': c.id,
-      'name': c.name,
-      'role': c.role,
-      'location': c.location,
-      'qualification': c.qualification,
-      'experience': c.experience,
-      'age': c.age,
-      'phone': c.phone,
-      'rating': c.rating,
-      'addedDate': c.addedDate,
-      'notes': c.notes,
-      'interviewTime': c.interviewTime,
-    };
-  }
-
+  // using
   /// Fetch companies
   static Future<List<Company>> fetchCompanies() async {
     final token = await TokenService.getValidAccessToken();

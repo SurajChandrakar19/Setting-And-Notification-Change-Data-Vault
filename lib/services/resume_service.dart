@@ -11,6 +11,7 @@ import '../services/token_service.dart';
 class ResumeService {
   static final String baseUrl = HostService.baseUrl;
 
+  // using
   /// Downloads and opens a candidate's resume
   static Future<void> downloadAndOpenResume(int candidateId) async {
     final token = await TokenService.getValidAccessToken();
@@ -57,6 +58,7 @@ class ResumeService {
     }
   }
 
+  // using
   /// Extracts filename from response header
   static String? _extractFileName(String contentDisposition) {
     final regex = RegExp(r'filename="?(.+)"?');
@@ -64,6 +66,7 @@ class ResumeService {
     return match?.group(1);
   }
 
+  // using
   /// Fallback temp directory
   static Future<io.Directory> getTemporaryDirectory() async {
     return await getApplicationDocumentsDirectory();
