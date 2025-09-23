@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 import 'dart:io' as io;
 import '../services/csv_download_service.dart';
 import '../services/permission_service.dart';
+import '../widgets/candidate_popup_form.dart';
 
 class DataVaultPage extends StatefulWidget {
   final VoidCallback? onBackToHome;
@@ -1334,7 +1335,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
                     icon: Icons.schedule_outlined,
                     label: 'Schedule',
                     color: const Color(0xFF9C27B0),
-                    onTap: () => _scheduleCall(),
+                    onTap: () => _scheduleCall(candidate),
                     isDark: isDark,
                   ),
                 ),
@@ -1734,7 +1735,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
                                       icon: Icons.schedule_outlined,
                                       label: 'Schedule',
                                       color: const Color(0xFF9C27B0),
-                                      onTap: () {},
+                                      onTap: () => _scheduleCall(candidate),
                                       isDark: isDark,
                                     ),
                                   ),
@@ -2383,18 +2384,26 @@ Best regards''';
     }
   }
 
-  void _scheduleCall() {
+  void _scheduleCall(CandidateModelConverter candidate) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Schedule Call'),
-        content: const Text('Call scheduling feature coming soon!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
+      builder: (context) => Dialog(
+        child: CandidatePopupForm(
+          initialPhone: candidate.phone ?? '',
+          initialName: candidate.name,
+          initialEmail: candidate.email,
+          initialRole: candidate.role,
+          initialLocation: candidate.location,
+          initialQualification: candidate.qualification,
+          initialExperience: candidate.experience,
+          onBookInterview: (data) {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Interview scheduled for ${data['name']}')),
+            );
+          },
+          userId: userProvider?.userId ?? '',
+        ),
       ),
     );
   }

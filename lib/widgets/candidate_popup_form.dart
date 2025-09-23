@@ -109,11 +109,7 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
     }
 
     if (widget.initialEmail != null && widget.initialEmail!.isNotEmpty) {
-      final nameParts = widget.initialEmail!.split(' ');
-      _firstNameController.text = nameParts.first;
-      if (nameParts.length > 1) {
-        _emailController.text = nameParts.sublist(1).join(' ');
-      }
+      _emailController.text = widget.initialEmail!;
     }
 
     if (widget.initialExperience != null) {

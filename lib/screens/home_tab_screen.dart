@@ -15,6 +15,8 @@ import '../services/dashboad_service.dart';
 import '../models/dashbord_summary_model.dart';
 import '../services/dashbord_service.dart';
 import '../services/and_candidate_service.dart';
+import 'account_settings_screen.dart';
+import 'help_support_screen.dart';
 
 class HomeTabScreen extends StatefulWidget {
   const HomeTabScreen({super.key});
@@ -1305,27 +1307,12 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  // Add your account settings navigation here
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.notifications_outlined,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: Text(
-                  'Notifications',
-                  style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
-                ),
-                trailing: Icon(
-                  Icons.chevron_right,
-                  color: Theme.of(context).iconTheme.color,
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Add your notifications navigation here
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AccountSettingsScreen(),
+                    ),
+                  );
                 },
               ),
               ListTile(
@@ -1345,7 +1332,12 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  // Add your help & support navigation here
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HelpSupportScreen(),
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 10),
