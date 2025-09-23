@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import '../models/candidate_model.dart';
 import '../models/company_model.dart';
 import '../models/reschedule_candidate.dart';
 import '../services/host_service.dart';

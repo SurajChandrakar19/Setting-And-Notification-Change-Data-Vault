@@ -20,7 +20,7 @@
         tools:ignore="ScopedStorage" />
 
     <application
-        android:label="PocketCTS"
+        android:label="Pocket CTS"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -32,12 +32,12 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
   UserProvider? userProvider;
   
   // CSV data from the provided file
-  String csvData = '''AGE,CANDIDATE NAME,MODIFIED DATE,PHONE,QUALIFICATION,RATING,ROLE,STATUS,TRACKER ADDED DATE,USER NAME
-28,Alice Johnson,2025-08-26T10:21:54.941692,+1987654321,Masters in Computer Science,4,Senior Software Engineer,PENDING,2025-08-26T10:21:55.115339,John Manager
-32,Bob Smith,2025-08-26T10:21:55.052851,+1987654322,PhD in Statistics,5,Data Scientist,SELECTED,2025-08-26T10:21:55.130972,Sarah Recruiter
-29,Carol Davis,2025-08-26T10:21:55.099715,+1987654323,MBA,4,Product Manager,PENDING,2025-08-26T10:21:55.146591,Mike HR
-25,David Wilson,2025-08-26T10:21:54.738074,+1987654324,Bachelors in Marketing,3,Marketing Specialist,REJECTED,2025-08-26T10:21:55.146591,Sarah Recruiter
-27,Emma Brown,2025-08-26T10:21:54.738074,+1987654325,Bachelors in Business,4,Sales Representative,JOINED,2025-08-26T10:21:55.162223,Mike HR''';
+//   String csvData = '''AGE,CANDIDATE NAME,MODIFIED DATE,PHONE,QUALIFICATION,RATING,ROLE,STATUS,TRACKER ADDED DATE,USER NAME
+// 28,Alice Johnson,2025-08-26T10:21:54.941692,+1987654321,Masters in Computer Science,4,Senior Software Engineer,PENDING,2025-08-26T10:21:55.115339,John Manager
+// 32,Bob Smith,2025-08-26T10:21:55.052851,+1987654322,PhD in Statistics,5,Data Scientist,SELECTED,2025-08-26T10:21:55.130972,Sarah Recruiter
+// 29,Carol Davis,2025-08-26T10:21:55.099715,+1987654323,MBA,4,Product Manager,PENDING,2025-08-26T10:21:55.146591,Mike HR
+// 25,David Wilson,2025-08-26T10:21:54.738074,+1987654324,Bachelors in Marketing,3,Marketing Specialist,REJECTED,2025-08-26T10:21:55.146591,Sarah Recruiter
+// 27,Emma Brown,2025-08-26T10:21:54.738074,+1987654325,Bachelors in Business,4,Sales Representative,JOINED,2025-08-26T10:21:55.162223,Mike HR''';
 
   // Filter options
   String selectedFilter = 'All';
@@ -47,7 +47,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
     'Rejected',
     'Joined',
     'Pending',
-    'Close',
+    'Closed',
   ];
 
   List<Map<String, dynamic>> get filteredApplications {
@@ -280,7 +280,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
           return Colors.red;
         case 'Joined':
           return Colors.green;
-        case 'Close':
+        case 'Closed':
           return Colors.grey;
         default:
           return Colors.orange;
@@ -295,8 +295,8 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
           return 'Rejected';
         case 'joined':
           return 'Joined';
-        case 'close':
-          return 'Close';
+        case 'Closed':
+          return 'Closed';
         default:
           return 'Pending';
       }
@@ -573,7 +573,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
                         ),
                       ),
                       PopupMenuItem<String>(
-                        value: 'close',
+                        value: 'Closed',
                         child: Row(
                           children: [
                             Icon(
@@ -582,7 +582,7 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
                               size: 20,
                             ),
                             const SizedBox(width: 8),
-                            const Text('Close'),
+                            const Text('Closure'),
                           ],
                         ),
                       ),
@@ -698,8 +698,8 @@ class _ApplicationsTabScreenState extends State<ApplicationsTabScreen> {
         return Colors.red;
       case 'Joined':
         return Colors.green;
-      case 'close':
-      case 'Close':
+      case 'Closed':
+      case 'Closed':
         return Colors.grey;
       default:
         return Colors.orange;

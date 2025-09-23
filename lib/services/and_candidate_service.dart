@@ -1,11 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 
-import '../models/company_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/company_id_name_model.dart';
-import '../models/candidate_create_model.dart';
-import '../models/create_candidate_response.dart';
 import 'package:http_parser/http_parser.dart';
 import '../models/create_candidate_with_resume.dart';
 import 'package:mime/mime.dart'; // for lookupMimeType

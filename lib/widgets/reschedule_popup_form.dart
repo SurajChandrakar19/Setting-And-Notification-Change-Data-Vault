@@ -292,7 +292,7 @@ class _ReschedulePopupFormState extends State<ReschedulePopupForm> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6.0),
                     child: DropdownButtonFormField<Company>(
-                      value: selectedCompany,
+                      initialValue: selectedCompany,
                       items: companies.map((company) {
                         return DropdownMenuItem<Company>(
                           value: company,

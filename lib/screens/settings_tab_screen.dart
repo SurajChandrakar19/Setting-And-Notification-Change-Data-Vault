@@ -102,7 +102,7 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
                     ),
                   );
                 },
-                activeColor: accentLighterBlue,
+                activeThumbColor: accentLighterBlue,
               ),
               onTap: () {
                 // Toggle the switch when the whole row is tapped

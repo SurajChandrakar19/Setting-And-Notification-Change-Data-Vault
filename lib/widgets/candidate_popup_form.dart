@@ -852,7 +852,7 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
                     const SizedBox(height: 24),
 
                     DropdownButtonFormField<CompanyIdName>(
-                      value:
+                      initialValue:
                           selectedCompany, // This must be a valid CompanyIdName
                       items: companies.isNotEmpty
                           ? companies.map((company) {

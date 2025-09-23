@@ -8,6 +8,8 @@ import 'package:headsup_ats/models/db_vault_model.dart';
 import 'package:headsup_ats/services/candidatte_db_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../utils/app_colors.dart';
 import 'dashboard_shell_screen.dart';
 import '../providers/user_provider.dart';
@@ -2269,37 +2271,115 @@ Best regards''';
     }
   }
 
-  Future<void> _launchWhatsAppWithMessage(String phone, String message) async {
-    final Uri whatsappUri = Uri.parse(
-      "https://wa.me/$phone?text=${Uri.encodeComponent(message)}",
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
     );
-    if (await canLaunchUrl(whatsappUri)) {
-      await launchUrl(whatsappUri);
+  }
+
+  Future<void> _launchWhatsAppWithMessage(String phone, String message) async {
+    // Clean the phone number
+    String cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    if (!cleanPhone.startsWith('+')) {
+      cleanPhone = '+$cleanPhone';
+    }
+
+    try {
+      if (kIsWeb) {
+        // Web: Use https://wa.me/
+        final Uri whatsappUri = Uri.parse(
+          "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}",
+        );
+        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+      } else if (Platform.isAndroid) {
+        // Android: Try multiple approaches
+        try {
+          // First try: whatsapp:// scheme
+          final Uri whatsappSchemeUri = Uri.parse(
+            "whatsapp://send?phone=$cleanPhone&text=${Uri.encodeComponent(message)}",
+          );
+          await launchUrl(whatsappSchemeUri, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          try {
+            // Second try: wa.me web URL
+            final Uri whatsappWebUri = Uri.parse(
+              "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}",
+            );
+            await launchUrl(whatsappWebUri, mode: LaunchMode.externalApplication);
+          } catch (e2) {
+            try {
+              // Third try: api.whatsapp.com
+              final Uri whatsappApiUri = Uri.parse(
+                "https://api.whatsapp.com/send?phone=$cleanPhone&text=${Uri.encodeComponent(message)}",
+              );
+              await launchUrl(whatsappApiUri, mode: LaunchMode.externalApplication);
+            } catch (e3) {
+              _showErrorSnackBar('Could not open WhatsApp. Please ensure WhatsApp is installed and try again.');
+            }
+          }
+        }
+      } else if (Platform.isIOS) {
+        // iOS: Try whatsapp:// scheme first
+        try {
+          final Uri whatsappSchemeUri = Uri.parse(
+            "whatsapp://send?phone=$cleanPhone&text=${Uri.encodeComponent(message)}",
+          );
+          await launchUrl(whatsappSchemeUri, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          try {
+            // Fallback to web URL
+            final Uri whatsappWebUri = Uri.parse(
+              "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}",
+            );
+            await launchUrl(whatsappWebUri, mode: LaunchMode.externalApplication);
+          } catch (e2) {
+            _showErrorSnackBar('Could not open WhatsApp. Please ensure WhatsApp is installed and try again.');
+          }
+        }
+      } else {
+        // Desktop or other platforms
+        final Uri whatsappUri = Uri.parse(
+          "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}",
+        );
+        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error opening WhatsApp: Please check if WhatsApp is installed.');
     }
   }
 
   Future<void> _launchPhone(String phone) async {
-    final Uri phoneUri = Uri.parse("tel:$phone");
-    if (await canLaunchUrl(phoneUri)) {
-      await launchUrl(phoneUri);
+    try {
+      final Uri phoneUri = Uri.parse("tel:$phone");
+      await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      _showErrorSnackBar('Could not launch dialer. Please check if you have a phone app configured.');
     }
   }
 
   Future<void> _launchSMSWithMessage(String phone, String message) async {
-    final Uri smsUri = Uri.parse(
-      "sms:$phone?body=${Uri.encodeComponent(message)}",
-    );
-    if (await canLaunchUrl(smsUri)) {
-      await launchUrl(smsUri);
+    try {
+      final Uri smsUri = Uri.parse(
+        "sms:$phone?body=${Uri.encodeComponent(message)}",
+      );
+      await launchUrl(smsUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      _showErrorSnackBar('Could not open SMS app. Please check if you have a messaging app installed.');
     }
   }
 
   Future<void> _launchEmailWithMessage(String email, String message) async {
-    final Uri emailUri = Uri.parse(
-      "mailto:$email?subject=Job Opportunity&body=${Uri.encodeComponent(message)}",
-    );
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
+    try {
+      final Uri emailUri = Uri.parse(
+        "mailto:$email?subject=Job Opportunity&body=${Uri.encodeComponent(message)}",
+      );
+      await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      _showErrorSnackBar('Could not open email app. Please check if you have an email app configured.');
     }
   }
 

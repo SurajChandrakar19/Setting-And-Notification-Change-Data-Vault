@@ -31,36 +31,65 @@ class SimpleAdminDashboardSummary {
     required this.summaryMessage,
   });
 
+  // factory SimpleAdminDashboardSummary.fromJson(Map<String, dynamic> json) {
+  //   return SimpleAdminDashboardSummary(
+  //     userId: json['userId'] ?? 0,
+  //     userName: json['userName'] ?? '',
+  //     isAdmin: json['isAdmin'] ?? false,
+  //     todayTotalGoForInterviewCount:
+  //         json['todayGoForInterviewCount'] ??
+  //         json['todayTotalGoForInterviewCount'] ??
+  //         0,
+  //     todayTotalTargetCandidateCount: json['todayTotalTarget'] ?? 0,
+  //     todayTotalReachedCandidateCount:
+  //         json['todayReachedCandidateCount'] ??
+  //         json['todayTotalReachedCandidateCount'] ??
+  //         0,
+  //     currentMonthTotalTarget:
+  //         json['currentMonthTarget'] ?? json['currentMonthTotalTarget'] ?? 0,
+  //     currentMonthTotalAchieved:
+  //         json['currentMonthAchieved'] ??
+  //         json['currentMonthTotalAchieved'] ??
+  //         0,
+  //     currentMonthProgressPercentage:
+  //         (json['currentMonthProgressPercentage'] ??
+  //                 json['currentMonthTotalProgressPercentage'] ??
+  //                 0.0)
+  //             .toDouble(),
+  //     previousMonth: MonthData.fromJson(json['previousMonth'] ?? {}),
+  //     currentMonth: MonthData.fromJson(json['currentMonth'] ?? {}),
+  //     nextMonth: MonthData.fromJson(json['nextMonth'] ?? {}),
+  //     userRole: json['userRole'] ?? '',
+  //     summaryMessage: json['summaryMessage'] ?? '',
+  //   );
+  // }
+
   factory SimpleAdminDashboardSummary.fromJson(Map<String, dynamic> json) {
     return SimpleAdminDashboardSummary(
       userId: json['userId'] ?? 0,
       userName: json['userName'] ?? '',
       isAdmin: json['isAdmin'] ?? false,
       todayTotalGoForInterviewCount:
-          json['todayGoForInterviewCount'] ??
-          json['todayTotalGoForInterviewCount'] ??
+          json['todayGfi'] ??
           0,
-      todayTotalTargetCandidateCount: json['todayTotalTarget'] ?? 0,
+      todayTotalTargetCandidateCount: json['todayTarget'] ?? 0,
       todayTotalReachedCandidateCount:
-          json['todayReachedCandidateCount'] ??
-          json['todayTotalReachedCandidateCount'] ??
+          json['todayReached'] ??
           0,
       currentMonthTotalTarget:
-          json['currentMonthTarget'] ?? json['currentMonthTotalTarget'] ?? 0,
+          json['monthTarget'] ?? 0,
       currentMonthTotalAchieved:
-          json['currentMonthAchieved'] ??
-          json['currentMonthTotalAchieved'] ??
+          json['monthAchieved'] ??
           0,
       currentMonthProgressPercentage:
-          (json['currentMonthProgressPercentage'] ??
-                  json['currentMonthTotalProgressPercentage'] ??
+          (json['monthProgress'] ??
                   0.0)
               .toDouble(),
-      previousMonth: MonthData.fromJson(json['previousMonth'] ?? {}),
-      currentMonth: MonthData.fromJson(json['currentMonth'] ?? {}),
+      previousMonth: MonthData.fromJson(json['prevMonth'] ?? {}),
+      currentMonth: MonthData.fromJson(json['currMonth'] ?? {}),
       nextMonth: MonthData.fromJson(json['nextMonth'] ?? {}),
-      userRole: json['userRole'] ?? '',
-      summaryMessage: json['summaryMessage'] ?? '',
+      userRole: json['role'] ?? '',
+      summaryMessage: json['message'] ?? '',
     );
   }
 }
@@ -84,15 +113,29 @@ class MonthData {
     required this.periodKey,
   });
 
+  // factory MonthData.fromJson(Map<String, dynamic> json) {
+  //   return MonthData(
+  //     monthName: json['monthName'] ?? '',
+  //     monthNumber: json['monthNumber'] ?? 0,
+  //     year: json['year'] ?? 0,
+  //     totalJoning: json['target'] ?? json['totalJoning'] ?? 0,
+  //     totalClosures: json['achieved'] ?? json['totalClosures'] ?? 0,
+  //     totalProgressPercentage:
+  //         (json['progressPercentage'] ?? json['totalProgressPercentage'] ?? 0.0)
+  //             .toDouble(),
+  //     periodKey: json['periodKey'] ?? '',
+  //   );
+  // }
+
   factory MonthData.fromJson(Map<String, dynamic> json) {
     return MonthData(
-      monthName: json['monthName'] ?? '',
-      monthNumber: json['monthNumber'] ?? 0,
+      monthName: json['name'] ?? '',
+      monthNumber: json['number'] ?? 0,
       year: json['year'] ?? 0,
-      totalJoning: json['target'] ?? json['totalJoning'] ?? 0,
-      totalClosures: json['achieved'] ?? json['totalClosures'] ?? 0,
+      totalJoning: json['totalJoin'] ?? 0,
+      totalClosures: json['totalClosure'] ?? 0,
       totalProgressPercentage:
-          (json['progressPercentage'] ?? json['totalProgressPercentage'] ?? 0.0)
+          (json['progress'] ?? 0.0)
               .toDouble(),
       periodKey: json['periodKey'] ?? '',
     );
