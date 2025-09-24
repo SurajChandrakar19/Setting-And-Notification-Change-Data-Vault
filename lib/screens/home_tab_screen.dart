@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:headsup_ats/screens/onboarding_screen.dart';
 import 'package:headsup_ats/services/auth_service.dart';
@@ -258,7 +259,9 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                         backgroundImage:
                             (userProvider!.profilePic != null &&
                                 userProvider!.profilePic!.isNotEmpty)
-                            ? NetworkImage(userProvider!.profilePic!)
+                            ? (userProvider!.profilePic!.startsWith('http')
+                                ? NetworkImage(userProvider!.profilePic!)
+                                : FileImage(File(userProvider!.profilePic!)))
                             : const AssetImage('assets/images/PocketCTS.png')
                                   as ImageProvider,
                         child:

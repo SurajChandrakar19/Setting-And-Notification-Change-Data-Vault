@@ -96,12 +96,46 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     }
   }
 
+  Future<void> _removeProfilePicture() async {
+    // Update provider and storage
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final tokens = await TokenStorage.getTokens();
+    final accessToken = tokens['accessToken'] ?? '';
+    final refreshToken = tokens['refreshToken'];
+
+    await userProvider.setUser(
+      userId: userProvider.userId!,
+      email: userProvider.email!,
+      name: userProvider.name!,
+      role: userProvider.role!,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      profilePic: '', // Set to empty string to remove profile pic
+      admin: userProvider.admin,
+    );
+
+    setState(() {
+      _imageFile = null;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profile picture removed successfully')),
+    );
+  }
+
   void _showImageSourceDialog() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final hasProfilePic = userProvider.profilePic != null && userProvider.profilePic!.isNotEmpty;
+
+    // Debug logging
+    print('Profile Pic: ${userProvider.profilePic}');
+    print('Has Profile Pic: $hasProfilePic');
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Choose Image Source'),
+          title: const Text('Profile Picture'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -121,6 +155,17 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                   _pickImage(ImageSource.gallery);
                 },
               ),
+              if (hasProfilePic) ...[
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('Remove Picture', style: TextStyle(color: Colors.red)),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _removeProfilePicture();
+                  },
+                ),
+              ],
             ],
           ),
         );
@@ -198,12 +243,19 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Tap to change profile picture',
-              style: TextStyle(
-                color: subtleTextColor,
-                fontSize: 14,
-              ),
+            Consumer<UserProvider>(
+              builder: (context, userProvider, child) {
+                final hasProfilePic = userProvider.profilePic != null && userProvider.profilePic!.isNotEmpty;
+                return Text(
+                  hasProfilePic
+                      ? 'Tap to change or remove profile picture'
+                      : 'Tap to add profile picture',
+                  style: TextStyle(
+                    color: subtleTextColor,
+                    fontSize: 14,
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 40),
 

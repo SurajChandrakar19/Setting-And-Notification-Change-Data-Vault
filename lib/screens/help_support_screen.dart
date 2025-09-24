@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
@@ -85,11 +86,15 @@ class HelpSupportScreen extends StatelessWidget {
           const SizedBox(height: 32),
           Center(
             child: ElevatedButton.icon(
-              onPressed: () {
-                // In a real app, use url_launcher to open email
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Launching email to info@headsuphrsolutions.com')),
-                );
+              onPressed: () async {
+                final Uri emailUri = Uri(scheme: 'mailto', path: 'info@headsuphrsolutions.com');
+                try {
+                  await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Could not launch email app')),
+                  );
+                }
               },
               icon: const Icon(Icons.email),
               label: const Text('Contact Support'),
