@@ -17,6 +17,7 @@ class CandidatePopupForm extends StatefulWidget {
   final String? initialLocation;
   final String? initialQualification;
   final String? initialExperience;
+  final String? initialAge;
   final String? initialInterviewTime;
   final bool onlyEditTime;
   final void Function(Map<String, dynamic> candidateData) onBookInterview;
@@ -32,6 +33,7 @@ class CandidatePopupForm extends StatefulWidget {
     this.initialLocation,
     this.initialQualification,
     this.initialExperience,
+    this.initialAge,
     this.initialInterviewTime,
     this.onlyEditTime = false,
     required this.onBookInterview,
@@ -115,7 +117,10 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
     if (widget.initialExperience != null) {
       _experienceController.text = widget.initialExperience!;
     }
-    // Age is not passed, so leave as is unless you add initialAge
+
+    if (widget.initialAge != null && widget.initialAge!.isNotEmpty) {
+      _ageController.text = widget.initialAge!;
+    }
     // Set other fields if initial values are provided
     if (widget.initialLocation != null) {
       selectedLocality = widget.initialLocation;

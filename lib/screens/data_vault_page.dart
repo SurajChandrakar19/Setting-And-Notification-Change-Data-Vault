@@ -18,6 +18,7 @@ import 'dart:io' as io;
 import '../services/csv_download_service.dart';
 import '../services/permission_service.dart';
 import '../widgets/candidate_popup_form.dart';
+import 'candidates_tab_screen.dart';
 
 class DataVaultPage extends StatefulWidget {
   final VoidCallback? onBackToHome;
@@ -2396,10 +2397,21 @@ Best regards''';
           initialLocation: candidate.location,
           initialQualification: candidate.qualification,
           initialExperience: candidate.experience,
+          initialAge: candidate.age,
           onBookInterview: (data) {
             Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Interview scheduled for ${data['name']}')),
+            );
+            // Navigate to Candidates screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CandidatesTabScreen(
+                  onBackToHome: () => Navigator.of(context).pop(),
+                  isAdmin: widget.isAdmin,
+                ),
+              ),
             );
           },
           userId: userProvider?.userId ?? '',
