@@ -3,15 +3,13 @@ import 'package:provider/provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'utils/app_colors.dart';
 import 'providers/user_provider.dart';
+import 'providers/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // replace with your home page
 import '../screens/login_screen.dart';
 import '../utils/token_storage.dart'; // Import your TokenStorage utility
 import '../services/token_service.dart'; // Import your TokenService
 import 'screens/dashboard_shell_screen.dart';
-
-// Export for use in other files
-ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.light);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,41 +20,22 @@ void main() async {
 
   runApp(
     MultiProvider(
-      // providers: [ChangeNotifierProvider(create: (_) => UserProvider())],
       providers: [
         ChangeNotifierProvider<UserProvider>.value(value: userProvider),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const MyApp(),
     ),
   );
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  @override
-  void initState() {
-    super.initState();
-    _loadTheme();
-  }
-
-  Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isDarkMode = prefs.getBool('isDarkMode') ?? false;
-    print('Loaded dark mode preference: $isDarkMode');
-    themeModeNotifier.value = isDarkMode ? ThemeMode.dark : ThemeMode.light;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: themeModeNotifier,
-      builder: (context, mode, _) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
         return MaterialApp(
           title: 'HEADSUP HR SOLUTIONS',
           theme: ThemeData(
@@ -134,7 +113,7 @@ class _MyAppState extends State<MyApp> {
               backgroundColor: Color(0xFF23262B),
             ),
           ),
-          themeMode: mode,
+          themeMode: themeProvider.themeMode,
           debugShowCheckedModeBanner: false,
           // home: const OnboardingScreen(),
           home: const AppEntry(), // Start page logic moved to AppEntry

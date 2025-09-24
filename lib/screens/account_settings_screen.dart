@@ -17,11 +17,19 @@ class AccountSettingsScreen extends StatefulWidget {
 class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   final ImagePicker _picker = ImagePicker();
   File? _imageFile;
+  final TextEditingController _phoneController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadCurrentProfilePic();
+    _loadUserProfile(); // Load phone number from database
+  }
+
+  Future<void> _loadUserProfile() async {
+    // TODO: Implement API call to fetch user profile including phone number
+    // For now, phone number is not loaded from database
+    // The logic to fetch phone from database should be implemented here
   }
 
   Future<void> _loadCurrentProfilePic() async {
@@ -238,14 +246,113 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               ),
             ),
             const SizedBox(height: 20),
+
+            // Email Section (Display only, from login)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.email_outlined,
+                    color: primaryDarkBlue,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Email',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: subtleTextColor,
+                          ),
+                        ),
+                        Text(
+                          userProvider.email ?? 'No email available',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
             const Text(
-              'Your name is managed by your account and cannot be changed here.',
+              'Your email is used for login and cannot be changed here.',
               style: TextStyle(
                 color: subtleTextColor,
                 fontSize: 12,
               ),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 20),
+
+            // Phone Section (Editable, from database)
+            // Container(
+            //   padding: const EdgeInsets.all(16),
+            //   decoration: BoxDecoration(
+            //     border: Border.all(color: Colors.grey.shade300),
+            //     borderRadius: BorderRadius.circular(8),
+            //   ),
+            //   child: Row(
+            //     children: [
+            //       const Icon(
+            //         Icons.phone_outlined,
+            //         color: primaryDarkBlue,
+            //       ),
+            //       const SizedBox(width: 16),
+            //       Expanded(
+            //         child: Column(
+            //           crossAxisAlignment: CrossAxisAlignment.start,
+            //           children: [
+            //             const Text(
+            //               'Phone Number',
+            //               style: TextStyle(
+            //                 fontSize: 12,
+            //                 color: subtleTextColor,
+            //               ),
+            //             ),
+            //             TextField(
+            //               controller: _phoneController,
+            //               decoration: const InputDecoration(
+            //                 hintText: 'Enter phone number',
+            //                 border: InputBorder.none,
+            //                 contentPadding: EdgeInsets.zero,
+            //               ),
+            //               style: const TextStyle(
+            //                 fontSize: 16,
+            //                 fontWeight: FontWeight.w500,
+            //               ),
+            //               keyboardType: TextInputType.phone,
+            //               onChanged: (value) {
+            //                 // TODO: Implement save logic for phone number
+            //                 // This could call an API to update the phone number in the database
+            //               },
+            //             ),
+            //           ],
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
+            const SizedBox(height: 20),
+            // const Text(
+            //   'Your phone number is stored in the database and can be updated.',
+            //   style: TextStyle(
+            //     color: subtleTextColor,
+            //     fontSize: 12,
+            //   ),
+            //   textAlign: TextAlign.center,
+            // ),
           ],
         ),
       ),

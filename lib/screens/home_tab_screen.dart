@@ -5,7 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../services/notification_service.dart'
     show NotificationItem, NotificationType, NotificationService;
 import '../widgets/candidate_popup_form.dart';
-import '../../main.dart' show themeModeNotifier;
+import '../providers/theme_provider.dart';
 import '../../data/user_role.dart';
 import '../../data/performance_data.dart';
 import 'package:provider/provider.dart';
@@ -1275,20 +1275,22 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              SwitchListTile(
-                title: const Text('Dark Mode'),
-                value: themeModeNotifier.value == ThemeMode.dark,
-                onChanged: (value) {
-                  themeModeNotifier.value = value
-                      ? ThemeMode.dark
-                      : ThemeMode.light;
+              Consumer<ThemeProvider>(
+                builder: (context, themeProvider, _) {
+                  return SwitchListTile(
+                    title: const Text('Dark Mode'),
+                    value: themeProvider.themeMode == ThemeMode.dark,
+                    onChanged: (value) async {
+                      await themeProvider.toggleTheme(value);
+                    },
+                    secondary: Icon(
+                      themeProvider.themeMode == ThemeMode.dark
+                          ? Icons.dark_mode
+                          : Icons.light_mode,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  );
                 },
-                secondary: Icon(
-                  themeModeNotifier.value == ThemeMode.dark
-                      ? Icons.dark_mode
-                      : Icons.light_mode,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
               ),
               ListTile(
                 leading: Icon(

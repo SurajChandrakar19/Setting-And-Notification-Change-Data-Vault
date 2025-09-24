@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../utils/app_colors.dart'; // For specific colors if not themed
 import 'login_screen.dart'; // For logout navigation
 import 'privacy_policy_screen.dart';
 import 'help_support_screen.dart';
 import 'account_details_screen.dart';
 import 'account_settings_screen.dart';
+import '../providers/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../main.dart'; // Import for themeModeNotifier
 
 class SettingsTabScreen extends StatefulWidget {
   const SettingsTabScreen({super.key});
@@ -86,10 +87,9 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
               );
             },
           ),
-          ValueListenableBuilder<ThemeMode>(
-            valueListenable: themeModeNotifier,
-            builder: (context, themeMode, _) {
-              final isDarkMode = themeMode == ThemeMode.dark;
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) {
+              final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
               return ListTile(
                 leading: const Icon(
                   Icons.dark_mode_outlined,
@@ -99,9 +99,7 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
                 trailing: Switch(
                   value: isDarkMode,
                   onChanged: (bool value) async {
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.setBool('isDarkMode', value);
-                    themeModeNotifier.value = value ? ThemeMode.dark : ThemeMode.light;
+                    await themeProvider.toggleTheme(value);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
@@ -115,9 +113,7 @@ class _SettingsTabScreenState extends State<SettingsTabScreen> {
                 ),
                 onTap: () async {
                   final newValue = !isDarkMode;
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setBool('isDarkMode', newValue);
-                  themeModeNotifier.value = newValue ? ThemeMode.dark : ThemeMode.light;
+                  await themeProvider.toggleTheme(newValue);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
