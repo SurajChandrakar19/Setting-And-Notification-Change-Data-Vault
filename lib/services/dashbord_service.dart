@@ -13,7 +13,7 @@ class DashboardSummaryService {
   fetchSimpleAdminUserSummary() async {
     final token = await TokenService.getValidAccessToken();
     final response = await http.get(
-      Uri.parse('$baseUrl/dashboard/admin-user-summary'),
+      Uri.parse('$baseUrl/dashboard/dashboard-summary'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',

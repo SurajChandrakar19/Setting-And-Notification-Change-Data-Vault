@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/go_for_interview_response.dart';
-import '../models/dashboard_model.dart';
 import '../services/host_service.dart';
 import '../services/token_service.dart';
 

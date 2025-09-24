@@ -10,7 +10,7 @@ class OnboardingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundWhite,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -20,18 +20,18 @@ class OnboardingScreen extends StatelessWidget {
               // Title with Pocket CTS
               RichText(
                 textAlign: TextAlign.center,
-                text: const TextSpan(
+                text: TextSpan(
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w700,
-                    color: textDark,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                     letterSpacing: -0.5,
                   ),
                   children: [
                     TextSpan(text: 'Pocket '),
                     TextSpan(
                       text: 'CTS',
-                      style: TextStyle(color: pocketBlue),
+                      style: TextStyle(color: primaryBlue),
                     ),
                   ],
                 ),
@@ -68,11 +68,11 @@ class OnboardingScreen extends StatelessWidget {
               // Main description text
               RichText(
                 textAlign: TextAlign.center,
-                text: const TextSpan(
+                text: TextSpan(
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w600,
-                    color: textDark,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                     height: 1.2,
                     letterSpacing: -0.5,
                   ),
@@ -80,19 +80,19 @@ class OnboardingScreen extends StatelessWidget {
                     TextSpan(text: 'The whole company in\nyour '),
                     TextSpan(
                       text: 'Pocket',
-                      style: TextStyle(color: pocketBlue),
+                      style: TextStyle(color: primaryBlue),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               // Subtitle description
-              const Text(
+              Text(
                 'Get all your HR related tasks in one place. Easy,\nreliable and quick.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: textSecondary,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                   height: 1.4,
                   fontWeight: FontWeight.w400,
                 ),
@@ -135,10 +135,10 @@ class OnboardingScreen extends StatelessWidget {
               // Powered by text
               RichText(
                 textAlign: TextAlign.center,
-                text: const TextSpan(
+                text: TextSpan(
                   style: TextStyle(
                     fontSize: 13,
-                    color: textSecondary,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                     fontWeight: FontWeight.w400,
                   ),
                   children: [
@@ -146,7 +146,7 @@ class OnboardingScreen extends StatelessWidget {
                     TextSpan(
                       text: 'Headsup HR',
                       style: TextStyle(
-                        color: textDark,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

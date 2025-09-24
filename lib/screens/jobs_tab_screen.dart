@@ -540,7 +540,7 @@ class _JobsTabScreenState extends State<JobsTabScreen> {
                                                             ),
                                                       ),
                                                       child: DropdownButtonFormField<String>(
-                                                        value: type,
+                                                        initialValue: type,
                                                         items:
                                                             [
                                                                   'Full-Time',

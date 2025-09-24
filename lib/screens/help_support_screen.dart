@@ -10,6 +10,49 @@ class HelpSupportScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(24.0),
         children: [
+          Text('Contact Information', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 20),
+          Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      const Text('Address:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text('14 (24/3) Albert Street, Richmond Rd, Cross, Bengaluru, Karnataka 560025'),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.email, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      const Text('Email:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text('info@headsuphrsolutions.com'),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.phone, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      const Text('Phone:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text('+91 8618164140'),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
           Text('Frequently Asked Questions', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 20),
           ExpansionTile(
@@ -45,7 +88,7 @@ class HelpSupportScreen extends StatelessWidget {
               onPressed: () {
                 // In a real app, use url_launcher to open email
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Launching email to support@example.com')),
+                  const SnackBar(content: Text('Launching email to info@headsuphrsolutions.com')),
                 );
               },
               icon: const Icon(Icons.email),

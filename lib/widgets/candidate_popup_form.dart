@@ -17,6 +17,7 @@ class CandidatePopupForm extends StatefulWidget {
   final String? initialLocation;
   final String? initialQualification;
   final String? initialExperience;
+  final String? initialAge;
   final String? initialInterviewTime;
   final bool onlyEditTime;
   final void Function(Map<String, dynamic> candidateData) onBookInterview;
@@ -32,6 +33,7 @@ class CandidatePopupForm extends StatefulWidget {
     this.initialLocation,
     this.initialQualification,
     this.initialExperience,
+    this.initialAge,
     this.initialInterviewTime,
     this.onlyEditTime = false,
     required this.onBookInterview,
@@ -109,17 +111,16 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
     }
 
     if (widget.initialEmail != null && widget.initialEmail!.isNotEmpty) {
-      final nameParts = widget.initialEmail!.split(' ');
-      _firstNameController.text = nameParts.first;
-      if (nameParts.length > 1) {
-        _emailController.text = nameParts.sublist(1).join(' ');
-      }
+      _emailController.text = widget.initialEmail!;
     }
 
     if (widget.initialExperience != null) {
       _experienceController.text = widget.initialExperience!;
     }
-    // Age is not passed, so leave as is unless you add initialAge
+
+    if (widget.initialAge != null && widget.initialAge!.isNotEmpty) {
+      _ageController.text = widget.initialAge!;
+    }
     // Set other fields if initial values are provided
     if (widget.initialLocation != null) {
       selectedLocality = widget.initialLocation;
@@ -839,7 +840,7 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
                               if (value == null || value.isEmpty) {
                                 return 'Required';
                               }
-                              final phoneRegExp = RegExp(r'^\d{10} ?$');
+                              final phoneRegExp = RegExp(r'^\d{10}?$');
                               if (!phoneRegExp.hasMatch(value)) {
                                 return 'Enter a valid 10-digit number';
                               }
@@ -852,7 +853,7 @@ class _CandidatePopupFormState extends State<CandidatePopupForm> {
                     const SizedBox(height: 24),
 
                     DropdownButtonFormField<CompanyIdName>(
-                      value:
+                      initialValue:
                           selectedCompany, // This must be a valid CompanyIdName
                       items: companies.isNotEmpty
                           ? companies.map((company) {

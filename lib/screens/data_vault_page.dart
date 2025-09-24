@@ -8,6 +8,8 @@ import 'package:headsup_ats/models/db_vault_model.dart';
 import 'package:headsup_ats/services/candidatte_db_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../utils/app_colors.dart';
 import 'dashboard_shell_screen.dart';
 import '../providers/user_provider.dart';
@@ -15,6 +17,8 @@ import 'package:provider/provider.dart';
 import 'dart:io' as io;
 import '../services/csv_download_service.dart';
 import '../services/permission_service.dart';
+import '../widgets/candidate_popup_form.dart';
+import 'candidates_tab_screen.dart';
 
 class DataVaultPage extends StatefulWidget {
   final VoidCallback? onBackToHome;
@@ -1332,7 +1336,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
                     icon: Icons.schedule_outlined,
                     label: 'Schedule',
                     color: const Color(0xFF9C27B0),
-                    onTap: () => _scheduleCall(),
+                    onTap: () => _scheduleCall(candidate),
                     isDark: isDark,
                   ),
                 ),
@@ -1732,7 +1736,7 @@ class _DataVaultPageState extends State<DataVaultPage> {
                                       icon: Icons.schedule_outlined,
                                       label: 'Schedule',
                                       color: const Color(0xFF9C27B0),
-                                      onTap: () {},
+                                      onTap: () => _scheduleCall(candidate),
                                       isDark: isDark,
                                     ),
                                   ),
@@ -2269,52 +2273,149 @@ Best regards''';
     }
   }
 
-  Future<void> _launchWhatsAppWithMessage(String phone, String message) async {
-    final Uri whatsappUri = Uri.parse(
-      "https://wa.me/$phone?text=${Uri.encodeComponent(message)}",
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
     );
-    if (await canLaunchUrl(whatsappUri)) {
-      await launchUrl(whatsappUri);
+  }
+
+  Future<void> _launchWhatsAppWithMessage(String phone, String message) async {
+    // Clean the phone number
+    String cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    if (!cleanPhone.startsWith('+')) {
+      cleanPhone = '+$cleanPhone';
+    }
+
+    try {
+      if (kIsWeb) {
+        // Web: Use https://wa.me/
+        final Uri whatsappUri = Uri.parse(
+          "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}",
+        );
+        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+      } else if (Platform.isAndroid) {
+        // Android: Try multiple approaches
+        try {
+          // First try: whatsapp:// scheme
+          final Uri whatsappSchemeUri = Uri.parse(
+            "whatsapp://send?phone=$cleanPhone&text=${Uri.encodeComponent(message)}",
+          );
+          await launchUrl(whatsappSchemeUri, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          try {
+            // Second try: wa.me web URL
+            final Uri whatsappWebUri = Uri.parse(
+              "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}",
+            );
+            await launchUrl(whatsappWebUri, mode: LaunchMode.externalApplication);
+          } catch (e2) {
+            try {
+              // Third try: api.whatsapp.com
+              final Uri whatsappApiUri = Uri.parse(
+                "https://api.whatsapp.com/send?phone=$cleanPhone&text=${Uri.encodeComponent(message)}",
+              );
+              await launchUrl(whatsappApiUri, mode: LaunchMode.externalApplication);
+            } catch (e3) {
+              _showErrorSnackBar('Could not open WhatsApp. Please ensure WhatsApp is installed and try again.');
+            }
+          }
+        }
+      } else if (Platform.isIOS) {
+        // iOS: Try whatsapp:// scheme first
+        try {
+          final Uri whatsappSchemeUri = Uri.parse(
+            "whatsapp://send?phone=$cleanPhone&text=${Uri.encodeComponent(message)}",
+          );
+          await launchUrl(whatsappSchemeUri, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          try {
+            // Fallback to web URL
+            final Uri whatsappWebUri = Uri.parse(
+              "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}",
+            );
+            await launchUrl(whatsappWebUri, mode: LaunchMode.externalApplication);
+          } catch (e2) {
+            _showErrorSnackBar('Could not open WhatsApp. Please ensure WhatsApp is installed and try again.');
+          }
+        }
+      } else {
+        // Desktop or other platforms
+        final Uri whatsappUri = Uri.parse(
+          "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}",
+        );
+        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error opening WhatsApp: Please check if WhatsApp is installed.');
     }
   }
 
   Future<void> _launchPhone(String phone) async {
-    final Uri phoneUri = Uri.parse("tel:$phone");
-    if (await canLaunchUrl(phoneUri)) {
-      await launchUrl(phoneUri);
+    try {
+      final Uri phoneUri = Uri.parse("tel:$phone");
+      await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      _showErrorSnackBar('Could not launch dialer. Please check if you have a phone app configured.');
     }
   }
 
   Future<void> _launchSMSWithMessage(String phone, String message) async {
-    final Uri smsUri = Uri.parse(
-      "sms:$phone?body=${Uri.encodeComponent(message)}",
-    );
-    if (await canLaunchUrl(smsUri)) {
-      await launchUrl(smsUri);
+    try {
+      final Uri smsUri = Uri.parse(
+        "sms:$phone?body=${Uri.encodeComponent(message)}",
+      );
+      await launchUrl(smsUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      _showErrorSnackBar('Could not open SMS app. Please check if you have a messaging app installed.');
     }
   }
 
   Future<void> _launchEmailWithMessage(String email, String message) async {
-    final Uri emailUri = Uri.parse(
-      "mailto:$email?subject=Job Opportunity&body=${Uri.encodeComponent(message)}",
-    );
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
+    try {
+      final Uri emailUri = Uri.parse(
+        "mailto:$email?subject=Job Opportunity&body=${Uri.encodeComponent(message)}",
+      );
+      await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      _showErrorSnackBar('Could not open email app. Please check if you have an email app configured.');
     }
   }
 
-  void _scheduleCall() {
+  void _scheduleCall(CandidateModelConverter candidate) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Schedule Call'),
-        content: const Text('Call scheduling feature coming soon!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
+      builder: (context) => Dialog(
+        child: CandidatePopupForm(
+          initialPhone: candidate.phone ?? '',
+          initialName: candidate.name,
+          initialEmail: candidate.email,
+          initialRole: candidate.role,
+          initialLocation: candidate.location,
+          initialQualification: candidate.qualification,
+          initialExperience: candidate.experience,
+          initialAge: candidate.age,
+          onBookInterview: (data) {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Interview scheduled for ${data['name']}')),
+            );
+            // Navigate to Candidates screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CandidatesTabScreen(
+                  onBackToHome: () => Navigator.of(context).pop(),
+                  isAdmin: widget.isAdmin,
+                ),
+              ),
+            );
+          },
+          userId: userProvider?.userId ?? '',
+        ),
       ),
     );
   }

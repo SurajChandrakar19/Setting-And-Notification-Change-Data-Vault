@@ -11,29 +11,60 @@ class OAuth2Service {
   static const String _baseUrl = HostService.baseUrl;
 
   // using
-  static Future<Map<String, dynamic>> oauth2Login({
-    required String provider,
-    required String accessToken,
-    required String email,
-    required String name,
-  }) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/oauth2/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'provider': provider,
-        'accessToken': accessToken,
-        'email': email,
-        'name': name,
-      }),
-    );
+//   static Future<Map<String, dynamic>> oauth2Login({
+//     required String provider,
+//     required String accessToken,
+//     required String email,
+//     required String name,
+//   }) async {
+//     final response = await http.post(
+//       Uri.parse('$_baseUrl/oauth2/login'),
+//       headers: {'Content-Type': 'application/json'},
+//       body: jsonEncode({
+//         'provider': provider,
+//         'accessToken': accessToken,
+//         'email': email,
+//         'name': name,
+//       }),
+//     );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('OAuth2 login failed');
-    }
+//     if (response.statusCode == 200) {
+//       return jsonDecode(response.body);
+//     } else {
+//       throw Exception('OAuth2 login failed');
+//     }
+//   }
+// }
+
+static Future<Map<String, dynamic>> oauth2Login({
+  required String provider,
+  required String accessToken,
+  required String email,
+  required String name,
+}) async {
+  // Check if email ends with the allowed domain
+  if (!(email.toLowerCase().endsWith('@headsuphrsolutions.in') ||
+      email.toLowerCase().endsWith('@headsuphrsolutions.com'))) {
+    throw Exception('Unauthorized email domain');
   }
+
+  final response = await http.post(
+    Uri.parse('$_baseUrl/oauth2/login'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'provider': provider,
+      'accessToken': accessToken,
+      'email': email,
+      'name': name,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('OAuth2 login failed');
+  }
+}
 }
 
 class GoogleAuthService {

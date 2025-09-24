@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -78,3 +79,117 @@ class NotificationItem {
 }
 
 enum NotificationType { interview, reschedule, reached, general }
+
+class TopNotificationService {
+  static final TopNotificationService _instance =
+      TopNotificationService._internal();
+  factory TopNotificationService() => _instance;
+
+  TopNotificationService._internal();
+
+  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  // Future<void> init() async {
+  //   // Android initialization
+  //   const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  //   // iOS initialization
+  //   const iosInit = DarwinInitializationSettings();
+
+  //   const initSettings = InitializationSettings(
+  //     android: androidInit,
+  //     iOS: iosInit,
+  //   );
+
+  //   await _flutterLocalNotificationsPlugin.initialize(
+  //     initSettings,
+  //     onDidReceiveNotificationResponse: (details) {
+  //       // Handle tap on notification if needed
+  //       print('Notification clicked: ${details.payload}');
+  //     },
+  //   );
+  // }
+
+  Future<void> init() async {
+    // Android initialization
+    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    // iOS initialization
+    const iosInit = DarwinInitializationSettings();
+
+    const initSettings = InitializationSettings(
+      android: androidInit,
+      iOS: iosInit,
+    );
+
+    // Initialize plugin
+    await _flutterLocalNotificationsPlugin.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (details) {
+        print('Notification clicked: ${details.payload}');
+      },
+    );
+
+    // ✅ Create notification channel (for Android 8+)
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'gfi_channel', // must match the id you use in showNotification
+      'Interview Notifications',
+      description: 'Notifications for interviews',
+      importance: Importance.high,
+    );
+
+    await _flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(channel);
+  }
+
+  Future<void> showNotification({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    // Android-specific details
+    final androidDetails = AndroidNotificationDetails(
+      'gfi_channel', // Unique channel ID
+      'Interview Notifications', // Channel name
+      channelDescription: 'Notifications for interviews',
+      importance: Importance.high, // Heads-up pop-up
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      ticker: 'Interview Ticker',
+      largeIcon: const DrawableResourceAndroidBitmap(
+        '@mipmap/ic_launcher',
+      ), // Your custom logo
+      styleInformation: const DefaultStyleInformation(
+        true,
+        true,
+      ), // Expandable text
+    );
+
+    // iOS-specific details
+    final iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    // Combined notification details
+    final platformDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    // Show notification
+    await _flutterLocalNotificationsPlugin.show(
+      id,
+      title,
+      body,
+      platformDetails,
+      payload: 'InterviewScheduled', // optional, for handling taps
+    );
+  }
+}

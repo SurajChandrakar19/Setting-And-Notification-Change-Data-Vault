@@ -5,7 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../services/notification_service.dart'
     show NotificationItem, NotificationType, NotificationService;
 import '../widgets/candidate_popup_form.dart';
-import '../../main.dart' show themeModeNotifier;
+import '../providers/theme_provider.dart';
 import '../../data/user_role.dart';
 import '../../data/performance_data.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +15,8 @@ import '../services/dashboad_service.dart';
 import '../models/dashbord_summary_model.dart';
 import '../services/dashbord_service.dart';
 import '../services/and_candidate_service.dart';
+import 'account_settings_screen.dart';
+import 'help_support_screen.dart';
 
 class HomeTabScreen extends StatefulWidget {
   const HomeTabScreen({super.key});
@@ -1273,20 +1275,22 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              SwitchListTile(
-                title: const Text('Dark Mode'),
-                value: themeModeNotifier.value == ThemeMode.dark,
-                onChanged: (value) {
-                  themeModeNotifier.value = value
-                      ? ThemeMode.dark
-                      : ThemeMode.light;
+              Consumer<ThemeProvider>(
+                builder: (context, themeProvider, _) {
+                  return SwitchListTile(
+                    title: const Text('Dark Mode'),
+                    value: themeProvider.themeMode == ThemeMode.dark,
+                    onChanged: (value) async {
+                      await themeProvider.toggleTheme(value);
+                    },
+                    secondary: Icon(
+                      themeProvider.themeMode == ThemeMode.dark
+                          ? Icons.dark_mode
+                          : Icons.light_mode,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  );
                 },
-                secondary: Icon(
-                  themeModeNotifier.value == ThemeMode.dark
-                      ? Icons.dark_mode
-                      : Icons.light_mode,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
               ),
               ListTile(
                 leading: Icon(
@@ -1305,27 +1309,12 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  // Add your account settings navigation here
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.notifications_outlined,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: Text(
-                  'Notifications',
-                  style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
-                ),
-                trailing: Icon(
-                  Icons.chevron_right,
-                  color: Theme.of(context).iconTheme.color,
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Add your notifications navigation here
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AccountSettingsScreen(),
+                    ),
+                  );
                 },
               ),
               ListTile(
@@ -1345,7 +1334,12 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  // Add your help & support navigation here
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HelpSupportScreen(),
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 10),

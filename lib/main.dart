@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:headsup_ats/services/notification_service.dart';
 import 'package:provider/provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'utils/app_colors.dart';
 import 'providers/user_provider.dart';
+import 'providers/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // replace with your home page
 import '../screens/login_screen.dart';
 import '../utils/token_storage.dart'; // Import your TokenStorage utility
 import '../services/token_service.dart'; // Import your TokenService
 import 'screens/dashboard_shell_screen.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-// Export for use in other files
-ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.light);
+final _topNotificationService = TopNotificationService();
+
+Future<void> requestNotificationPermission() async {
+  if (await Permission.notification.isDenied) {
+    await Permission.notification.request();
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,12 +27,16 @@ void main() async {
   // restore user before runApp
   final userProvider = UserProvider();
   await userProvider.restoreUser();
+  await _topNotificationService.init();
+
+  // ✅ Request notification permission (Android 13+)
+  await requestNotificationPermission();
 
   runApp(
     MultiProvider(
-      // providers: [ChangeNotifierProvider(create: (_) => UserProvider())],
       providers: [
         ChangeNotifierProvider<UserProvider>.value(value: userProvider),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const MyApp(),
     ),
@@ -36,9 +48,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: themeModeNotifier,
-      builder: (context, mode, _) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
         return MaterialApp(
           title: 'HEADSUP HR SOLUTIONS',
           theme: ThemeData(
@@ -116,7 +127,7 @@ class MyApp extends StatelessWidget {
               backgroundColor: Color(0xFF23262B),
             ),
           ),
-          themeMode: mode,
+          themeMode: themeProvider.themeMode,
           debugShowCheckedModeBanner: false,
           // home: const OnboardingScreen(),
           home: const AppEntry(), // Start page logic moved to AppEntry

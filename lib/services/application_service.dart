@@ -1,14 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../services/host_service.dart';
-import 'package:flutter/foundation.dart';
-import 'package:open_filex/open_filex.dart';
 
 // Remove these if not used:
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:universal_html/html.dart' as html;
 import '../services/token_service.dart'; // Import TokenService for token management
 // import 'dart:html' as html;
 

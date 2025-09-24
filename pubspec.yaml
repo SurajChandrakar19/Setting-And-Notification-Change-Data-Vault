@@ -36,6 +36,8 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   shared_preferences: ^2.5.3
   # open_file: ^3.3.2
+  flutter_local_notifications: ^19.4.2
+  image_picker: ^1.0.4
 
 dev_dependencies:
   flutter_test:

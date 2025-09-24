@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../services/resume_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class CandidatesTabScreen extends StatefulWidget {
   final VoidCallback onBackToHome;
@@ -32,6 +33,7 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
   final NotificationService _notificationService = NotificationService();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+  // final TopNotificationService _topNotificationService = TopNotificationService();
 
   // Search variables
   String _searchQuery = '';
@@ -448,6 +450,74 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
   }
 
   // Go for interview
+  // void _goForInterview(int index) {
+  //   final parentContext = context;
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text('Confirm GFI Selection'),
+  //         content: Text(
+  //           'Mark ${(allCandidates[index]['name'] ?? '').toString()} as selected for GFI?',
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.pop(context),
+  //             child: const Text('Cancel'),
+  //           ),
+  //           ElevatedButton(
+  //             onPressed: () async {
+  //               Navigator.pop(context);
+
+  //               final success = await goForInterviewSubmit(
+  //                 allCandidates[index]['id'].toString(),
+  //               );
+
+  //               if (success) {
+  //                 setState(() {
+  //                   allCandidates[index]['gfiSelected'] = true;
+  //                 });
+  //                 _notificationService.addNotification(
+  //                   title: 'Interview Scheduled',
+  //                   message:
+  //                       'Interview scheduled with ${(allCandidates[index]['name'] ?? '').toString()}',
+  //                   type: NotificationType.interview,
+  //                   candidateName: (allCandidates[index]['name'] ?? '')
+  //                       .toString(),
+  //                 );
+  //                 ScaffoldMessenger.of(parentContext).showSnackBar(
+  //                   SnackBar(
+  //                     content: Text(
+  //                       'Interview scheduled with ${(allCandidates[index]['name'] ?? '').toString()}',
+  //                     ),
+  //                     backgroundColor: Colors.green,
+  //                   ),
+  //                 );
+  //               } else {
+  //                 ScaffoldMessenger.of(parentContext).showSnackBar(
+  //                   const SnackBar(
+  //                     content: Text(
+  //                       'Failed to schedule interview. Please try again.',
+  //                     ),
+  //                     backgroundColor: Colors.red,
+  //                   ),
+  //                 );
+  //               }
+  //             },
+  //             child: const Text('Confirm'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
+
+  Future<void> requestNotificationPermission() async {
+  if (await Permission.notification.isDenied) {
+    await Permission.notification.request();
+  }
+}
+
   void _goForInterview(int index) {
     final parentContext = context;
     showDialog(
@@ -475,6 +545,7 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
                   setState(() {
                     allCandidates[index]['gfiSelected'] = true;
                   });
+
                   _notificationService.addNotification(
                     title: 'Interview Scheduled',
                     message:
@@ -483,6 +554,16 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
                     candidateName: (allCandidates[index]['name'] ?? '')
                         .toString(),
                   );
+
+                  await requestNotificationPermission();
+                  // 🔔 Trigger local notification here
+                  TopNotificationService().showNotification(
+                    id: allCandidates[index]['id'] ?? 1,
+                    title: 'Interview Scheduled',
+                    body:
+                        'Interview scheduled with ${(allCandidates[index]['name'] ?? '').toString()}',
+                  );
+
                   ScaffoldMessenger.of(parentContext).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -590,6 +671,15 @@ class _CandidatesTabScreenState extends State<CandidatesTabScreen> {
                       candidateName: (allCandidates[index]['name'] ?? '')
                           .toString(),
                     );
+
+                    // 🔔 Trigger local notification here
+                    TopNotificationService().showNotification(
+                      id: allCandidates[index]['id'] ?? 1,
+                      title: 'Candidate Reached',
+                      body:
+                          'Candidate Reached with ${(allCandidates[index]['name'] ?? '').toString()}',
+                    );
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(

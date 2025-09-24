@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     // bool _isPasswordVisible = false;
     return Scaffold(
-      backgroundColor: backgroundWhite,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -41,18 +41,18 @@ class _LoginScreenState extends State<LoginScreen> {
               // Title with Pocket CTS
               RichText(
                 textAlign: TextAlign.center,
-                text: const TextSpan(
+                text: TextSpan(
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w700,
-                    color: textDark,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                     letterSpacing: -0.5,
                   ),
                   children: [
                     TextSpan(text: 'Pocket '),
                     TextSpan(
                       text: 'CTS',
-                      style: TextStyle(color: pocketBlue),
+                      style: TextStyle(color: primaryBlue),
                     ),
                   ],
                 ),
@@ -90,11 +90,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Welcome message
                 RichText(
                   textAlign: TextAlign.center,
-                  text: const TextSpan(
+                  text: TextSpan(
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
-                      color: textDark,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       height: 1.2,
                       letterSpacing: -0.5,
                     ),
@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       TextSpan(
                         text: 'Empower',
-                        style: TextStyle(color: empowerBlue),
+                        style: TextStyle(color: primaryBlue),
                       ),
                       TextSpan(text: '.'),
                     ],
@@ -114,18 +114,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
                 RichText(
                   textAlign: TextAlign.center,
-                  text: const TextSpan(
+                  text: TextSpan(
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
-                      color: textDark,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                       height: 1.2,
                       letterSpacing: -0.5,
                     ),
                     children: [
                       TextSpan(
                         text: 'Impactfull',
-                        style: TextStyle(color: empowerBlue),
+                        style: TextStyle(color: primaryBlue),
                       ),
                       TextSpan(text: ' Platform.'),
                     ],
@@ -214,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Admin login form
                 Text(
                   'Admin Access',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
                     color: primaryBlue,
@@ -223,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Secure administrative login',
-                  style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(fontSize: 16, color: Theme.of(context).textTheme.bodyMedium?.color),
                 ),
                 const SizedBox(height: 32),
                 // Email field
@@ -231,7 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _adminEmailController,
                   decoration: InputDecoration(
                     labelText: 'Admin Email',
-                    prefixIcon: const Icon(Icons.email, color: primaryBlue),
+                    prefixIcon: Icon(Icons.email, color: Theme.of(context).colorScheme.primary),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -246,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       !_isPasswordVisible, // This controls the visibility
                   decoration: InputDecoration(
                     labelText: 'Admin Password',
-                    prefixIcon: const Icon(Icons.lock, color: primaryBlue),
+                    prefixIcon: Icon(Icons.lock, color: Theme.of(context).colorScheme.primary),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -255,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         _isPasswordVisible
                             ? Icons.visibility
                             : Icons.visibility_off,
-                        color: Colors.grey,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                       onPressed: () {
                         setState(() {
@@ -373,17 +373,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       _showAdminForm = false;
                     });
                   },
-                  child: const Text('Back to User Login'),
+                  child: Text('Back to User Login', style: TextStyle(color: primaryBlue)),
                 ),
               ],
               const SizedBox(height: 16),
               // Powered by text
               RichText(
                 textAlign: TextAlign.center,
-                text: const TextSpan(
+                text: TextSpan(
                   style: TextStyle(
                     fontSize: 13,
-                    color: textSecondary,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                     fontWeight: FontWeight.w400,
                   ),
                   children: [
@@ -391,7 +391,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextSpan(
                       text: 'Headsup HR',
                       style: TextStyle(
-                        color: textDark,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
